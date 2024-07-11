@@ -20,7 +20,6 @@ endif()
 # Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
-find_package(dua_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(rclcpp REQUIRED)
@@ -40,7 +39,6 @@ target_include_directories(pose PUBLIC
 target_link_libraries(pose
   Eigen3::Eigen)
 ament_target_dependencies(pose
-  dua_interfaces
   geometry_msgs
   rclcpp
   std_msgs
@@ -59,7 +57,6 @@ target_link_libraries(kinematicpose
   pose
   Eigen3::Eigen)
 ament_target_dependencies(kinematicpose
-  dua_interfaces
   geometry_msgs
   std_msgs)
 
@@ -105,7 +102,6 @@ endif()
 # Export all dependencies and library targets for this package
 ament_export_targets(pose_kitTargets HAS_LIBRARY_TARGET)
 ament_export_dependencies(
-  dua_interfaces
   Eigen3
   geometry_msgs
   rclcpp

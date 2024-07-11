@@ -35,7 +35,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <dua_interfaces/msg/euler_pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -73,7 +72,6 @@ public:
     const std::array<double, 36> & cov = std::array<double, 36>{});
 
   /* Constructors from ROS messages. */
-  Pose(const dua_interfaces::msg::EulerPoseStamped & msg);
   Pose(const geometry_msgs::msg::PoseStamped & msg);
   Pose(const geometry_msgs::msg::PoseWithCovarianceStamped & msg);
 
@@ -81,7 +79,6 @@ public:
   virtual ~Pose();
 
   /* ROS interfaces conversion methods. */
-  dua_interfaces::msg::EulerPoseStamped to_euler_pose_stamped();
   geometry_msgs::msg::PoseStamped to_pose_stamped();
   geometry_msgs::msg::PoseWithCovarianceStamped to_pose_with_covariance_stamped();
 

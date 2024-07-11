@@ -32,7 +32,6 @@
 #include <Eigen/Geometry>
 #include <unsupported/Eigen/EulerAngles>
 
-#include <dua_interfaces/msg/euler_pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
@@ -85,10 +84,6 @@ public:
   /* Constructors from ROS messages. */
   KinematicPose(
     const geometry_msgs::msg::PoseStamped & pose_stamped,
-    const geometry_msgs::msg::TwistStamped & twist_stamped,
-    const std_msgs::msg::Header & header);
-  KinematicPose(
-    const dua_interfaces::msg::EulerPoseStamped & euler_pose_stamped,
     const geometry_msgs::msg::TwistStamped & twist_stamped,
     const std_msgs::msg::Header & header);
   KinematicPose(

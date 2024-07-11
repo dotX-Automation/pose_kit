@@ -135,27 +135,6 @@ Pose::Pose(
 }
 
 /**
- * @brief Constructor that builds from an EulerPoseStamped ROS message.
- *
- * @param msg ROS message to build from.
- */
-Pose::Pose(const dua_interfaces::msg::EulerPoseStamped & msg)
-{
-  this->set_position(
-    Eigen::Vector3d(
-      msg.pose.position.x,
-      msg.pose.position.y,
-      msg.pose.position.z));
-  this->set_attitude(
-    Eigen::Quaterniond(
-      msg.pose.orientation.w,
-      msg.pose.orientation.x,
-      msg.pose.orientation.y,
-      msg.pose.orientation.z));
-  this->set_header(msg.header);
-}
-
-/**
  * @brief Constructor that builds from a PoseStamped ROS message.
  *
  * @param msg ROS message to build from.
@@ -232,31 +211,6 @@ Pose & Pose::operator=(Pose && p)
  */
 Pose::~Pose()
 {}
-
-/**
- * @brief Converts to an EulerPoseStamped ROS message.
- *
- * @return EulerPoseStamped ROS message.
- */
-dua_interfaces::msg::EulerPoseStamped Pose::to_euler_pose_stamped()
-{
-  dua_interfaces::msg::EulerPoseStamped msg{};
-  Eigen::Vector3d position = this->get_position();
-  Eigen::Quaterniond attitude = this->get_attitude();
-  Eigen::EulerAnglesXYZd rpy = this->get_rpy();
-  msg.set__header(this->get_header());
-  msg.pose.position.set__x(position(0));
-  msg.pose.position.set__y(position(1));
-  msg.pose.position.set__z(position(2));
-  msg.pose.orientation.set__w(attitude.w());
-  msg.pose.orientation.set__x(attitude.x());
-  msg.pose.orientation.set__y(attitude.y());
-  msg.pose.orientation.set__z(attitude.z());
-  msg.set__roll(rpy.alpha());
-  msg.set__pitch(rpy.beta());
-  msg.set__yaw(rpy.gamma());
-  return msg;
-}
 
 /**
  * @brief Converts to a PoseStamped ROS message.

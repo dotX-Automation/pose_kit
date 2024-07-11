@@ -175,32 +175,6 @@ KinematicPose::KinematicPose(
 }
 
 /**
- * @brief Constructor that builds from a EulerPose and a TwistStamped ROS messages.
- *
- * @param euler_pose_stamped EulerPoseStamped ROS message.
- * @param twist_stamped TwistStamped ROS message.
- * @param header ROS header to use (to conciliate the two headers of the messages).
- */
-KinematicPose::KinematicPose(
-  const dua_interfaces::msg::EulerPoseStamped & euler_pose_stamped,
-  const geometry_msgs::msg::TwistStamped & twist_stamped,
-  const std_msgs::msg::Header & header)
-: Pose(euler_pose_stamped)
-{
-  this->set_velocity(
-    Eigen::Vector3d(
-      twist_stamped.twist.linear.x,
-      twist_stamped.twist.linear.y,
-      twist_stamped.twist.linear.z));
-  this->set_angular_velocity(
-    Eigen::Vector3d(
-      twist_stamped.twist.angular.x,
-      twist_stamped.twist.angular.y,
-      twist_stamped.twist.angular.z));
-  this->set_header(header);
-}
-
-/**
  * @brief Constructor that builds from a PoseWithCovarianceStamped and a TwistWithCovarianceStamped ROS messages.
  *
  * @param pose_with_cov_stamped PoseWithCovarianceStamped ROS message.
