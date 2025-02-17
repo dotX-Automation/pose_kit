@@ -178,6 +178,27 @@ Pose::Pose(const geometry_msgs::msg::PoseWithCovarianceStamped & msg)
 }
 
 /**
+ * @brief Constructor that builds from a TransformStamped ROS message.
+ *
+ * @param msg ROS message to build from.
+ */
+Pose::Pose(const geometry_msgs::msg::TransformStamped & msg)
+{
+  this->set_position(
+    Eigen::Vector3d(
+      msg.transform.translation.x,
+      msg.transform.translation.y,
+      msg.transform.translation.z));
+  this->set_attitude(
+    Eigen::Quaterniond(
+      msg.transform.rotation.w,
+      msg.transform.rotation.x,
+      msg.transform.rotation.y,
+      msg.transform.rotation.z));
+  this->set_header(msg.header);
+}
+
+/**
  * @brief Copy assignment operator.
  *
  * @param p Pose to copy.
