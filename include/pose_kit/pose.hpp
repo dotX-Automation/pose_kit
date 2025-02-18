@@ -74,6 +74,7 @@ public:
   /* Constructors from ROS messages. */
   Pose(const geometry_msgs::msg::PoseStamped & msg);
   Pose(const geometry_msgs::msg::PoseWithCovarianceStamped & msg);
+  Pose(const geometry_msgs::msg::TransformStamped & msg);
 
   /* Destructor. */
   virtual ~Pose();
