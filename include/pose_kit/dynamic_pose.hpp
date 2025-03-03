@@ -28,9 +28,14 @@
 #include "visibility_control.h"
 
 #include <array>
+#include <memory>
 
 #include <Eigen/Geometry>
-#include <unsupported/Eigen/EulerAngles>
+
+#include <tf2/LinearMath/Vector3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/utils.hpp>
 
 #include <sensor_msgs/msg/imu.hpp>
 #include <std_msgs/msg/header.hpp>
@@ -46,24 +51,85 @@ namespace pose_kit
 class POSE_KIT_PUBLIC DynamicPose : public KinematicPose
 {
 public:
-  /* Constructors. */
-  DynamicPose() {}
+  using SharedPtr = std::shared_ptr<DynamicPose>;
+  using WeakPtr = std::weak_ptr<DynamicPose>;
+  using UniquePtr = std::unique_ptr<DynamicPose>;
+  using ConstSharedPtr = std::shared_ptr<const DynamicPose>;
+  using ConstWeakPtr = std::weak_ptr<const DynamicPose>;
+
+  /**
+   * @brief Default constructor.
+   */
+  DynamicPose();
+
+  /**
+   * @brief Copy constructor.
+   *
+   * @param dp Pose to copy.
+   */
   DynamicPose(const DynamicPose & dp);
+
+  /**
+   * @brief Constructor with initial position, linear velocity, and linear acceleration.
+   *
+   * @param x Initial X position [m].
+   * @param y Initial Y position [m].
+   * @param z Initial Z position [m].
+   * @param vx Initial X linear velocity [m/s].
+   * @param vy Initial Y linear velocity [m/s].
+   * @param vz Initial Z linear velocity [m/s].
+   * @param header ROS header.
+   */
   DynamicPose(
     double x, double y, double z,
     double vx, double vy, double vz,
     double ax, double ay, double az,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial attitude, angular velocity, and angular acceleration.
+   *
+   * @param q Initial attitude quaternion.
+   * @param angular_v Initial angular velocity [rad/s].
+   * @param angular_a Initial angular acceleration [rad/s^2].
+   * @param header ROS header.
+   */
   DynamicPose(
-    const Eigen::Quaterniond & q,
-    const Eigen::Vector3d & angular_vel,
-    const Eigen::Vector3d & angular_accel,
+    const tf2::Quaternion & q,
+    const tf2::Vector3 & angular_v,
+    const tf2::Vector3 & angular_a,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial euler angles, angular velocity, and angular acceleration.
+   *
+   * @param rpy Initial euler angles [rad].
+   * @param angular_v Initial angular velocity [rad/s].
+   * @param angular_a Initial angular acceleration [rad/s^2].
+   * @param header ROS header.
+   */
   DynamicPose(
-    const Eigen::EulerAnglesXYZd & rpy_angles,
-    const Eigen::Vector3d & angular_vel,
-    const Eigen::Vector3d & angular_accel,
+    const tf2::Vector3 & rpy,
+    const tf2::Vector3 & angular_v,
+    const tf2::Vector3 & angular_a,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial position, linear velocity, linear acceleration, and heading.
+   *
+   * @param x Initial X position [m].
+   * @param y Initial Y position [m].
+   * @param z Initial Z position [m].
+   * @param vx Initial X linear velocity [m/s].
+   * @param vy Initial Y linear velocity [m/s].
+   * @param vz Initial Z linear velocity [m/s].
+   * @param ax Initial X linear acceleration [m/s^2].
+   * @param ay Initial Y linear acceleration [m/s^2].
+   * @param az Initial Z linear acceleration [m/s^2].
+   * @param heading Initial heading [rad].
+   * @param header ROS header.
+   * @param cov Initial covariance matrix.
+   */
   DynamicPose(
     double x, double y, double z,
     double vx, double vy, double vz,
@@ -71,58 +137,89 @@ public:
     double heading,
     const std_msgs::msg::Header & header,
     const std::array<double, 36> & cov);
+
+  /**
+   * @brief Constructor with initial position, attitude, linear and angular velocity and acceleration.
+   *
+   * @param p Initial position [m].
+   * @param q Initial attitude quaternion.
+   * @param v Initial linear velocity [m/s].
+   * @param angular_v Initial angular velocity [rad/s].
+   * @param a Initial linear acceleration [m/s^2].
+   * @param angular_a Initial angular acceleration [rad/s^2].
+   * @param header ROS header.
+   * @param cov Initial covariance matrix.
+   * @param twist_cov Initial twist covariance matrix.
+   * @param accel_cov Initial acceleration covariance matrix.
+   */
   DynamicPose(
-    const Eigen::Vector3d & pos,
-    const Eigen::Quaterniond & q,
-    const Eigen::Vector3d & vel,
-    const Eigen::Vector3d & angular_vel,
-    const Eigen::Vector3d & accel,
-    const Eigen::Vector3d & angular_accel,
+    const tf2::Vector3 & p,
+    const tf2::Quaternion & q,
+    const tf2::Vector3 & v,
+    const tf2::Vector3 & angular_v,
+    const tf2::Vector3 & a,
+    const tf2::Vector3 & angular_a,
     const std_msgs::msg::Header & header,
     const std::array<double, 36> & cov = std::array<double, 36>{},
     const std::array<double, 36> & twist_cov = std::array<double, 36>{},
     const std::array<double, 36> & accel_cov = std::array<double, 36>{});
+
   DynamicPose(Pose p)
   : KinematicPose(std::move(p)) {}
+
   DynamicPose(KinematicPose kp)
   : KinematicPose(std::move(kp)) {}
 
-  /* Destructor. */
-  virtual ~DynamicPose() {}
+  /**
+   * Destructor.
+   */
+  virtual ~DynamicPose();
 
-  /* ROS interfaces conversion methods. */
-  sensor_msgs::msg::Imu to_imu() const;
+  /**
+   * @brief Fills and returns a sensor_msgs/Imu message.
+   *
+   * @return sensor_msgs/Imu message.
+   */
+  void to_imu(sensor_msgs::msg::Imu & msg) const;
 
-  /* Getters. */
-  inline Eigen::Vector3d get_acceleration() const
+  [[nodiscard]] inline const tf2::Vector3 & acceleration() const
   {
     return acceleration_;
   }
-  inline Eigen::Vector3d get_angular_acceleration() const
+  [[nodiscard]] inline const tf2::Vector3 & angular_acceleration() const
   {
     return angular_acceleration_;
   }
-  inline std::array<double, 36> get_acceleration_covariance() const
+  [[nodiscard]] inline const std::array<double, 36> & acceleration_covariance() const
   {
     return acceleration_cov_;
   }
 
-  /* Setters. */
-  inline void set_acceleration(const Eigen::Vector3d & accel)
+  inline void set_acceleration(const tf2::Vector3 & a)
   {
-    acceleration_ = accel;
+    acceleration_ = a;
   }
-  inline void set_angular_acceleration(const Eigen::Vector3d & angular_accel)
+  inline void set_angular_acceleration(const tf2::Vector3 & angular_a)
   {
-    angular_acceleration_ = angular_accel;
+    angular_acceleration_ = angular_a;
   }
-  inline void set_acceleration_covariance(const std::array<double, 36> & accel_cov)
+  inline void set_acceleration_covariance(const std::array<double, 36> & a_cov)
   {
-    acceleration_cov_ = accel_cov;
+    acceleration_cov_ = a_cov;
   }
 
-  /* Assignment operators. */
+  /**
+   * @brief Copy assignment operator.
+   *
+   * @param dp DynamicPose to copy.
+   */
   DynamicPose & operator=(const DynamicPose & dp);
+
+  /**
+   * @brief Move assignment operator.
+   *
+   * @param dp DynamicPose to copy.
+   */
   DynamicPose & operator=(DynamicPose && dp);
 
   /* Geometric operations. */
@@ -130,8 +227,8 @@ public:
 
 protected:
   /* Internal data. */
-  Eigen::Vector3d acceleration_ = {0.0, 0.0, 0.0}; // [m/s^2]
-  Eigen::Vector3d angular_acceleration_ = {0.0, 0.0, 0.0}; // [rad/s^2]
+  tf2::Vector3 acceleration_ = {0.0, 0.0, 0.0}; // [m/s^2]
+  tf2::Vector3 angular_acceleration_ = {0.0, 0.0, 0.0}; // [rad/s^2]
   std::array<double, 36> acceleration_cov_{};
 };
 

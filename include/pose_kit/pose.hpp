@@ -1,5 +1,5 @@
 /**
- * Pose library, based on Eigen geometry types.
+ * Pose library, based on tf2 geometry types.
  *
  * Roberto Masocco <r.masocco@dotxautomation.com>
  *
@@ -28,17 +28,23 @@
 #include "visibility_control.h"
 
 #include <array>
+#include <memory>
 #include <stdexcept>
 
 #include <Eigen/Geometry>
-#include <unsupported/Eigen/EulerAngles>
 
-#include <rclcpp/rclcpp.hpp>
+#include <tf2/LinearMath/Vector3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/utils.hpp>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <std_msgs/msg/header.hpp>
+
+
+#include <rclcpp/rclcpp.hpp>
 
 namespace pose_kit
 {
@@ -49,111 +55,239 @@ namespace pose_kit
 class POSE_KIT_PUBLIC Pose
 {
 public:
-  /* Constructors. */
+  using SharedPtr = std::shared_ptr<Pose>;
+  using WeakPtr = std::weak_ptr<Pose>;
+  using UniquePtr = std::unique_ptr<Pose>;
+  using ConstSharedPtr = std::shared_ptr<const Pose>;
+  using ConstWeakPtr = std::weak_ptr<const Pose>;
+
+  /**
+   * @brief Default constructor.
+   */
   Pose();
+
+  /**
+   * @brief Copy constructor.
+   *
+   * @param p Pose to copy.
+   */
   Pose(const Pose & p);
+
+  /**
+   * @brief Constructor with initial position.
+   *
+   * @param x Initial X position [m].
+   * @param y Initial Y position [m].
+   * @param z Initial Z position [m].
+   * @param header Pose header.
+   */
   Pose(
     double x, double y, double z,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial attitude quaternion.
+   *
+   * @param q Initial attitude quaternion.
+   * @param header Pose header.
+   */
   Pose(
-    const Eigen::Quaterniond & q,
+    const tf2::Quaternion & q,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial attitude expressed as euler angles.
+   * Conventions are the classic ZYX (yaw-pitch-roll).
+   * Ref.: tf2/LinearMath/Matrix3x3.h
+   *
+   * @param rpy Initial roll, pitch, and yaw angles [rad].
+   * @param header Pose header.
+   */
   Pose(
-    const Eigen::EulerAnglesXYZd & rpy_angles,
+    const tf2::Vector3 & rpy,
     const std_msgs::msg::Header & header);
+
+  /**
+   * @brief Constructor with initial position and heading.
+   *
+   * @param x Initial X position [m].
+   * @param y Initial Y position [m].
+   * @param z Initial Z position [m].
+   * @param heading Initial heading (i.e., yaw) [rad] in [-PI +PI].
+   * @param header Pose header.
+   * @param cov Initial pose covariance.
+   */
   Pose(
     double x, double y, double z, double heading,
     const std_msgs::msg::Header & header,
     const std::array<double, 36> & cov = std::array<double, 36>{});
+
+  /**
+   * @brief Constructor with initial position and attitude.
+   *
+   * @param pos Initial position [m].
+   * @param q Initial attitude quaternion.
+   * @param header Pose header.
+   * @param cov Initial pose covariance.
+   */
   Pose(
-    const Eigen::Vector3d & pos,
-    const Eigen::Quaterniond & q,
+    const tf2::Vector3 & pos,
+    const tf2::Quaternion & q,
     const std_msgs::msg::Header & header,
     const std::array<double, 36> & cov = std::array<double, 36>{});
 
-  /* Constructors from ROS messages. */
+  /**
+   * @brief Constructor that builds from a PoseStamped ROS message.
+   *
+   * @param msg ROS message to build from.
+   */
   Pose(const geometry_msgs::msg::PoseStamped & msg);
+
+  /**
+   * @brief Constructor that builds from a PoseWithCovarianceStamped ROS message.
+   *
+   * @param msg ROS message to build from.
+   */
   Pose(const geometry_msgs::msg::PoseWithCovarianceStamped & msg);
+
+  /**
+   * @brief Constructor that builds from a TransformStamped ROS message.
+   *
+   * @param msg ROS message to build from.
+   */
   Pose(const geometry_msgs::msg::TransformStamped & msg);
 
-  /* Destructor. */
+  /**
+   * Destructor.
+   */
   virtual ~Pose();
 
-  /* ROS interfaces conversion methods. */
-  geometry_msgs::msg::PoseStamped to_pose_stamped();
-  geometry_msgs::msg::PoseWithCovarianceStamped to_pose_with_covariance_stamped();
+  /**
+   * @brief Converts to a PoseStamped ROS message.
+   *
+   * @return PoseStamped ROS message.
+   */
+  void to_pose_stamped(geometry_msgs::msg::PoseStamped & msg);
 
-  /* Getters. */
-  inline Eigen::Vector3d get_position() const
+  /**
+   * @brief Converts to a PoseWithCovarianceStamped ROS message.
+   *
+   * @return PoseWithCovarianceStamped ROS message.
+   */
+  void to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
+
+  /**
+   * @brief Gets the position of the rigid body in Eigen format.
+   *
+   * @param p Eigen vector to store the position.
+   */
+  inline void get_position(Eigen::Vector3d & p) const
+  {
+    p.x() = position_.x();
+    p.y() = position_.y();
+    p.z() = position_.z();
+  }
+
+  /**
+   * @brief Gets the attitude of the rigid body in Eigen format.
+   *
+   * @param q Eigen quaternion to store the attitude.
+   */
+  inline void get_attitude(Eigen::Quaterniond & q) const
+  {
+    q.w() = attitude_.w();
+    q.x() = attitude_.x();
+    q.y() = attitude_.y();
+    q.z() = attitude_.z();
+  }
+
+  /**
+   * @brief Gets the attitude of the rigid body in Euler angles.
+   * Applies the same conventions as tf2::getEulerYPR.
+   *
+   * @param rpy Eigen vector to store the roll, pitch, and yaw angles.
+   */
+  inline void get_rpy(Eigen::Vector3d & rpy) const
+  {
+    double r, p, y;
+    tf2::getEulerYPR(attitude_, y, p, r);
+    rpy.x() = r;
+    rpy.y() = p;
+    rpy.z() = y;
+  }
+
+  /**
+   * @brief Gets the heading of the rigid body.
+   *
+   * @param hdg Heading angle [rad] to be fetched.
+   */
+  inline void get_heading(double & hdg) const
+  {
+    double r, p, y;
+    tf2::getEulerYPR(attitude_, y, p, r);
+    hdg = y;
+  }
+
+  /**
+   * @brief Gets the isometry corresponding to the pose of the rigid __feof_unlocked_body.
+   *
+   * @param iso Eigen isometry to store the pose.
+   */
+  inline void get_isometry(Eigen::Isometry3d & iso) const
+  {
+    Eigen::Quaterniond q = Eigen::Quaterniond::Identity();
+    this->get_attitude(q);
+    Eigen::Vector3d p = Eigen::Vector3d::Zero();
+    this->get_position(p);
+    iso = Eigen::Isometry3d::Identity();
+    iso.rotate(q);
+    iso.pretranslate(p);
+  }
+
+  [[nodiscard]] inline const tf2::Vector3 & position() const
   {
     return position_;
   }
-  inline Eigen::Quaterniond get_attitude() const
+  [[nodiscard]] inline const tf2::Quaternion & attitude() const
   {
     return attitude_;
   }
-  inline Eigen::EulerAnglesXYZd get_rpy() const
-  {
-    return rpy_;
-  }
-  inline Eigen::AngleAxisd get_rotation() const
-  {
-    return Eigen::AngleAxisd(attitude_);
-  }
-  inline Eigen::Translation3d get_translation() const
-  {
-    return Eigen::Translation3d(position_);
-  }
-  inline Eigen::Isometry3d get_isometry() const
-  {
-    Eigen::Isometry3d isometry = Eigen::Isometry3d::Identity();
-    isometry.rotate(this->get_rotation());
-    isometry.pretranslate(this->get_translation().vector());
-    return isometry;
-  }
-  inline std::array<double, 36> get_pose_covariance() const
+  [[nodiscard]] inline const std::array<double, 36> & pose_covariance() const
   {
     return pose_covariance_;
   }
-  inline std_msgs::msg::Header get_header() const
+  [[nodiscard]] inline const std_msgs::msg::Header & header() const
   {
     return header_;
   }
-  inline uint64_t get_timestamp_ns() const
+  inline void get_timestamp_ns(uint64_t & ts) const
   {
-    return header_.stamp.sec * 1e9 + header_.stamp.nanosec;
+    ts = header_.stamp.sec * 1e9 + header_.stamp.nanosec;
   }
-  inline uint64_t get_timestamp_us() const
+  inline void get_timestamp_us(uint64_t & ts) const
   {
-    return header_.stamp.sec * 1e6 + header_.stamp.nanosec / 1e3;
+    ts = header_.stamp.sec * 1e6 + header_.stamp.nanosec / 1e3;
   }
-  inline uint64_t get_timestamp_ms() const
+  inline void get_timestamp_ms(uint64_t & ts) const
   {
-    return header_.stamp.sec * 1e3 + header_.stamp.nanosec / 1e6;
+    ts = header_.stamp.sec * 1e3 + header_.stamp.nanosec / 1e6;
   }
-  inline uint64_t get_timestamp_s() const
+  inline void get_timestamp_s(uint64_t & ts) const
   {
-    return header_.stamp.sec;
+    ts = header_.stamp.sec;
   }
-  inline std::string get_frame_id() const
+  inline void get_frame_id(std::string & id) const
   {
-    return header_.frame_id;
+    id = header_.frame_id;
   }
 
-  /* Setters. */
-  inline void set_position(const Eigen::Vector3d & pos)
+  inline void set_position(const tf2::Vector3 & pos)
   {
     position_ = pos;
   }
-  inline void set_attitude(const Eigen::Quaterniond & q)
+  inline void set_attitude(const tf2::Quaternion & q)
   {
     attitude_ = q;
-    rpy_ = Eigen::EulerAnglesXYZd(q);
-  }
-  inline void set_rpy(const Eigen::EulerAnglesXYZd & rpy_angles)
-  {
-    rpy_ = rpy_angles;
-    attitude_ = Eigen::Quaterniond(rpy_angles);
   }
   inline void set_pose_covariance(const std::array<double, 36> & cov)
   {
@@ -192,20 +326,33 @@ public:
     header_.set__frame_id(frame_id);
   }
 
-  /* Geometric operations. */
+  /**
+   * @brief Applies a rigid transformation to the pose.
+   *
+   * @param tf ROS transformation to apply.
+   * @param new_frame_id New frame ID to set (optional).
+   */
   virtual void rigid_transform(
     const geometry_msgs::msg::TransformStamped & tf,
     const std::string & new_frame_id = "");
 
-  /* Assignment operators. */
+  /**
+   * @brief Copy assignment operator.
+   *
+   * @param p Pose to copy.
+   */
   Pose & operator=(const Pose & p);
+
+  /**
+   * @brief Move assignment operator.
+   *
+   * @param p Pose to move.
+   */
   Pose & operator=(Pose && p);
 
 protected:
-  /* Internal data. */
-  Eigen::Vector3d position_ = {0.0, 0.0, 0.0}; // [m]
-  Eigen::Quaterniond attitude_ = Eigen::Quaterniond::Identity();
-  Eigen::EulerAnglesXYZd rpy_ = {0.0, 0.0, 0.0}; // [rad] in [-PI +PI]
+  tf2::Vector3 position_ = {0.0, 0.0, 0.0}; // [m]
+  tf2::Quaternion attitude_ = tf2::Quaternion::getIdentity();
   std::array<double, 36> pose_covariance_{};
   std_msgs::msg::Header header_{};
 };

@@ -29,87 +29,55 @@
 namespace pose_kit
 {
 
-/**
- * @brief Copy constructor.
- *
- * @param kp Pose to copy.
- */
+KinematicPose::KinematicPose()
+: Pose()
+{}
+
+KinematicPose::~KinematicPose()
+{}
+
 KinematicPose::KinematicPose(const KinematicPose & kp)
 : Pose(dynamic_cast<const Pose &>(kp))
 {
-  this->set_velocity(kp.get_velocity());
-  this->set_angular_velocity(kp.get_angular_velocity());
-  this->set_twist_covariance(kp.get_twist_covariance());
+  this->set_velocity(kp.velocity());
+  this->set_angular_velocity(kp.angular_velocity());
+  this->set_twist_covariance(kp.twist_covariance());
 }
 
-/**
- * @brief Constructor with initial position and linear velocity.
- *
- * @param x Initial X position [m].
- * @param y Initial Y position [m].
- * @param z Initial Z position [m].
- * @param vx Initial X linear velocity [m/s].
- * @param vy Initial Y linear velocity [m/s].
- * @param vz Initial Z linear velocity [m/s].
- * @param header ROS header.
- */
 KinematicPose::KinematicPose(
   double x, double y, double z,
   double vx, double vy, double vz,
   const std_msgs::msg::Header & header)
 : Pose(x, y, z, header)
 {
-  this->set_velocity(Eigen::Vector3d(vx, vy, vz));
-  this->set_angular_velocity(Eigen::Vector3d::Zero());
+  tf2::Vector3 p(x, y, z);
+  tf2::Vector3 v(vx, vy, vz);
+  this->set_position(p);
+  this->set_velocity(v);
 }
 
-/**
- * @brief Constructor with initial attitude and angular velocity.
- *
- * @param q Initial attitude quaternion.
- * @param angular_vel Initial angular velocity [rad/s].
- * @param header ROS header.
- */
 KinematicPose::KinematicPose(
-  const Eigen::Quaterniond & q,
-  const Eigen::Vector3d & angular_vel,
+  const tf2::Quaternion & q,
+  const tf2::Vector3 & angular_v,
   const std_msgs::msg::Header & header)
 : Pose(q, header)
 {
-  this->set_velocity(Eigen::Vector3d::Zero());
-  this->set_angular_velocity(angular_vel);
+  tf2::Vector3 v(0.0, 0.0, 0.0);
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
 }
 
-/**
- * @brief Constructor with initial euler angles and angular velocity.
- *
- * @param rpy_angles Initial euler angles [rad].
- * @param angular_vel Initial angular velocity [rad/s].
- * @param header ROS header.
- */
 KinematicPose::KinematicPose(
-  const Eigen::EulerAnglesXYZd & rpy_angles,
-  const Eigen::Vector3d & angular_vel,
+  const tf2::Vector3 & rpy,
+  const tf2::Vector3 & angular_v,
   const std_msgs::msg::Header & header)
-: Pose(rpy_angles, header)
+: Pose(rpy, header)
 {
-  this->set_velocity(Eigen::Vector3d::Zero());
-  this->set_angular_velocity(angular_vel);
+  tf2::Vector3 v(0.0, 0.0, 0.0);
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
 }
 
-/**
- * @brief Constructor with initial position, linear velocity, and heading.
- *
- * @param x Initial X position [m].
- * @param y Initial Y position [m].
- * @param z Initial Z position [m].
- * @param vx Initial X linear velocity [m/s].
- * @param vy Initial Y linear velocity [m/s].
- * @param vz Initial Z linear velocity [m/s].
- * @param heading Initial heading [rad].
- * @param header ROS header.
- * @param cov Initial covariance matrix.
- */
 KinematicPose::KinematicPose(
   double x, double y, double z,
   double vx, double vy, double vz,
@@ -118,169 +86,110 @@ KinematicPose::KinematicPose(
   const std::array<double, 36> & cov)
 : Pose(x, y, z, heading, header, cov)
 {
-  this->set_velocity(Eigen::Vector3d(vx, vy, vz));
-  this->set_angular_velocity(Eigen::Vector3d::Zero());
+  tf2::Vector3 v(vx, vy, vz);
+  tf2::Vector3 angular_v(0.0, 0.0, 0.0);
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
 }
 
-/**
- * @brief Constructor with initial position, attitude, linear and angular velocity.
- *
- * @param pos Initial position [m].
- * @param q Initial attitude quaternion.
- * @param vel Initial linear velocity [m/s].
- * @param angular_vel Initial angular velocity [rad/s].
- * @param header ROS header.
- * @param cov Initial covariance matrix.
- * @param twist_cov Initial twist covariance matrix.
- */
 KinematicPose::KinematicPose(
-  const Eigen::Vector3d & pos,
-  const Eigen::Quaterniond & q,
-  const Eigen::Vector3d & vel,
-  const Eigen::Vector3d & angular_vel,
+  const tf2::Vector3 & p,
+  const tf2::Quaternion & q,
+  const tf2::Vector3 & v,
+  const tf2::Vector3 & angular_v,
   const std_msgs::msg::Header & header,
   const std::array<double, 36> & cov,
   const std::array<double, 36> & twist_cov)
-: Pose(pos, q, header, cov)
+: Pose(p, q, header, cov)
 {
-  this->set_velocity(vel);
-  this->set_angular_velocity(angular_vel);
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
   this->set_twist_covariance(twist_cov);
 }
 
-/**
- * @brief Constructor that builds from a PoseStamped and a TwistStamped ROS messages.
- *
- * @param pose_stamped PoseStamped ROS message.
- * @param twist_stamped TwistStamped ROS message.
- * @param header ROS header to use (to conciliate the two headers of the messages).
- */
 KinematicPose::KinematicPose(
   const geometry_msgs::msg::PoseStamped & pose_stamped,
   const geometry_msgs::msg::TwistStamped & twist_stamped,
   const std_msgs::msg::Header & header)
 : Pose(pose_stamped)
 {
-  this->set_velocity(
-    Eigen::Vector3d(
-      twist_stamped.twist.linear.x,
-      twist_stamped.twist.linear.y,
-      twist_stamped.twist.linear.z));
-  this->set_angular_velocity(
-    Eigen::Vector3d(
-      twist_stamped.twist.angular.x,
-      twist_stamped.twist.angular.y,
-      twist_stamped.twist.angular.z));
+  tf2::Vector3 v(
+    twist_stamped.twist.linear.x,
+    twist_stamped.twist.linear.y,
+    twist_stamped.twist.linear.z);
+  tf2::Vector3 in;
+
+  this->set_velocity(v);
+  this->set_angular_velocity(in);
   this->set_header(header);
 }
 
-/**
- * @brief Constructor that builds from a PoseWithCovarianceStamped and a TwistWithCovarianceStamped ROS messages.
- *
- * @param pose_with_cov_stamped PoseWithCovarianceStamped ROS message.
- * @param twist_with_cov_stamped TwistWithCovarianceStamped ROS message.
- * @param header ROS header to use (to conciliate the two headers of the messages).
- */
 KinematicPose::KinematicPose(
   const geometry_msgs::msg::PoseWithCovarianceStamped & pose_with_cov_stamped,
   const geometry_msgs::msg::TwistWithCovarianceStamped & twist_with_cov_stamped,
   const std_msgs::msg::Header & header)
 : Pose(pose_with_cov_stamped)
 {
-  this->set_velocity(
-    Eigen::Vector3d(
-      twist_with_cov_stamped.twist.twist.linear.x,
-      twist_with_cov_stamped.twist.twist.linear.y,
-      twist_with_cov_stamped.twist.twist.linear.z));
-  this->set_angular_velocity(
-    Eigen::Vector3d(
-      twist_with_cov_stamped.twist.twist.angular.x,
-      twist_with_cov_stamped.twist.twist.angular.y,
-      twist_with_cov_stamped.twist.twist.angular.z));
+  tf2::Vector3 v(
+    twist_with_cov_stamped.twist.twist.linear.x,
+    twist_with_cov_stamped.twist.twist.linear.y,
+    twist_with_cov_stamped.twist.twist.linear.z);
+  tf2::Vector3 angular_v(
+    twist_with_cov_stamped.twist.twist.angular.x,
+    twist_with_cov_stamped.twist.twist.angular.y,
+    twist_with_cov_stamped.twist.twist.angular.z);
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
   this->set_twist_covariance(twist_with_cov_stamped.twist.covariance);
   this->set_header(header);
 }
 
-/**
- * @brief Copy assignment operator.
- *
- * @param kp KinematicPose to copy.
- */
 KinematicPose & KinematicPose::operator=(const KinematicPose & kp)
 {
-  this->set_position(kp.get_position());
-  this->set_attitude(kp.get_attitude());
-  this->set_header(kp.get_header());
-  this->set_velocity(kp.get_velocity());
-  this->set_angular_velocity(kp.get_angular_velocity());
-  this->set_twist_covariance(kp.get_twist_covariance());
+  this->set_position(kp.position());
+  this->set_attitude(kp.attitude());
+  this->set_header(kp.header());
+  this->set_velocity(kp.velocity());
+  this->set_angular_velocity(kp.angular_velocity());
+  this->set_twist_covariance(kp.twist_covariance());
   return *this;
 }
 
-/**
- * @brief Move assignment operator.
- *
- * @param kp KinematicPose to copy.
- */
 KinematicPose & KinematicPose::operator=(KinematicPose && kp)
 {
-  this->set_position(kp.get_position());
-  this->set_attitude(kp.get_attitude());
-  this->set_header(kp.get_header());
-  this->set_velocity(kp.get_velocity());
-  this->set_angular_velocity(kp.get_angular_velocity());
-  this->set_twist_covariance(kp.get_twist_covariance());
+  this->set_position(kp.position());
+  this->set_attitude(kp.attitude());
+  this->set_header(kp.header());
+  this->set_velocity(kp.velocity());
+  this->set_angular_velocity(kp.angular_velocity());
+  this->set_twist_covariance(kp.twist_covariance());
   return *this;
 }
 
-/**
- * @brief Fills and returns a TwistStamped ROS message.
- *
- * @return TwistStamped TwistStamped ROS message.
- */
-geometry_msgs::msg::TwistStamped KinematicPose::to_twist_stamped() const
+void KinematicPose::to_twist_stamped(geometry_msgs::msg::TwistStamped & msg) const
 {
-  geometry_msgs::msg::TwistStamped twist_stamped{};
-  Eigen::Vector3d linear_vel = this->get_velocity();
-  Eigen::Vector3d angular_vel = this->get_angular_velocity();
-  twist_stamped.set__header(this->get_header());
-  twist_stamped.twist.linear.set__x(linear_vel.x());
-  twist_stamped.twist.linear.set__y(linear_vel.y());
-  twist_stamped.twist.linear.set__z(linear_vel.z());
-  twist_stamped.twist.angular.set__x(angular_vel.x());
-  twist_stamped.twist.angular.set__y(angular_vel.y());
-  twist_stamped.twist.angular.set__z(angular_vel.z());
-  return twist_stamped;
+  msg.set__header(this->header());
+  msg.twist.linear.set__x(this->velocity().x());
+  msg.twist.linear.set__y(this->velocity().y());
+  msg.twist.linear.set__z(this->velocity().z());
+  msg.twist.angular.set__x(this->angular_velocity().x());
+  msg.twist.angular.set__y(this->angular_velocity().y());
+  msg.twist.angular.set__z(this->angular_velocity().z());
 }
 
-/**
- * @brief Fills and returns a TwistWithCovarianceStamped ROS message.
- *
- * @return TwistWithCovarianceStamped TwistWithCovarianceStamped ROS message.
- */
-geometry_msgs::msg::TwistWithCovarianceStamped KinematicPose::to_twist_with_covariance_stamped()
+void KinematicPose::to_twist_with_covariance_stamped(geometry_msgs::msg::TwistWithCovarianceStamped & msg)
 const
 {
-  geometry_msgs::msg::TwistWithCovarianceStamped twist_with_cov_stamped{};
-  Eigen::Vector3d linear_vel = this->get_velocity();
-  Eigen::Vector3d angular_vel = this->get_angular_velocity();
-  twist_with_cov_stamped.set__header(this->get_header());
-  twist_with_cov_stamped.twist.twist.linear.set__x(linear_vel.x());
-  twist_with_cov_stamped.twist.twist.linear.set__y(linear_vel.y());
-  twist_with_cov_stamped.twist.twist.linear.set__z(linear_vel.z());
-  twist_with_cov_stamped.twist.twist.angular.set__x(angular_vel.x());
-  twist_with_cov_stamped.twist.twist.angular.set__y(angular_vel.y());
-  twist_with_cov_stamped.twist.twist.angular.set__z(angular_vel.z());
-  twist_with_cov_stamped.twist.set__covariance(this->get_twist_covariance());
-  return twist_with_cov_stamped;
+  msg.set__header(this->header());
+  msg.twist.twist.linear.set__x(this->velocity().x());
+  msg.twist.twist.linear.set__y(this->velocity().y());
+  msg.twist.twist.linear.set__z(this->velocity().z());
+  msg.twist.twist.angular.set__x(this->angular_velocity().x());
+  msg.twist.twist.angular.set__y(this->angular_velocity().y());
+  msg.twist.twist.angular.set__z(this->angular_velocity().z());
+  msg.twist.set__covariance(this->twist_covariance());
 }
 
-/**
- * @brief Applies a rigid transformation to the pose.
- *
- * @param tf ROS transformation to apply.
- * @param new_frame_id New frame ID to set (optional).
- */
 void KinematicPose::rigid_transform(
   const geometry_msgs::msg::TransformStamped & tf,
   const std::string & new_frame_id)
@@ -289,32 +198,51 @@ void KinematicPose::rigid_transform(
   Pose::rigid_transform(tf, new_frame_id);
 
   // Build twist
+  Eigen::Vector3d eigen_v(
+    this->velocity().x(),
+    this->velocity().y(),
+    this->velocity().z());
+  Eigen::Vector3d eigen_angular_v(
+    this->angular_velocity().x(),
+    this->angular_velocity().y(),
+    this->angular_velocity().z());
   Eigen::Matrix<double, 6, 1> twist = Eigen::Matrix<double, 6, 1>::Zero();
-  twist.block<3, 1>(0, 0) = this->get_velocity();
-  twist.block<3, 1>(3, 0) = this->get_angular_velocity();
+  twist.block<3, 1>(0, 0) = eigen_v;
+  twist.block<3, 1>(3, 0) = eigen_angular_v;
 
-  // Get isometries and tf representations, and build adjoint matrix
+  // Get isometries and tf representations and build adjoint matrix
   Eigen::Isometry3d iso_from_to = tf2::transformToEigen(tf.transform);
   Eigen::Matrix<double, 6, 6> adjoint = Eigen::Matrix<double, 6, 6>::Zero();
   Eigen::Vector3d p = iso_from_to.translation();
   Eigen::Matrix<double, 3, 3> p_hat = Eigen::Matrix<double, 3, 3>::Zero();
-  p_hat << 0, -p.z(), p.y(),
-    p.z(), 0, -p.x(),
-    -p.y(), p.x(), 0;
+  p_hat << 0.0, -p.z(), p.y(),
+    p.z(), 0.0, -p.x(),
+    -p.y(), p.x(), 0.0;
   adjoint.block<3, 3>(0, 0) = iso_from_to.rotation();
   adjoint.block<3, 3>(0, 3) = p_hat * iso_from_to.rotation();
   adjoint.block<3, 3>(3, 3) = iso_from_to.rotation();
 
   // Remap covariance arrays, copy the input to preserve it
-  std::array<double, 36> twist_cov = this->get_twist_covariance();
+  std::array<double, 36> twist_cov(this->twist_covariance());
   Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>> twist_cov_in(twist_cov.data());
   Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor>> twist_cov_out(twist_covariance_.data());
 
   // Apply the transformation to the twist and its covariance
+  // TODO Covariance rotation and selected entries need a theoretical check
   Eigen::Matrix<double, 6, 1> twist_out = adjoint * twist;
   twist_cov_out = adjoint * twist_cov_in * adjoint.inverse();
-  this->set_velocity(twist_out.block<3, 1>(0, 0));
-  this->set_angular_velocity(twist_out.block<3, 1>(3, 0));
+
+  // Write back results
+  tf2::Vector3 v(
+    twist_out.block<3, 1>(0, 0)(0),
+    twist_out.block<3, 1>(0, 0)(1),
+    twist_out.block<3, 1>(0, 0)(2));
+  tf2::Vector3 angular_v(
+    twist_out.block<3, 1>(3, 0)(0),
+    twist_out.block<3, 1>(3, 0)(1),
+    twist_out.block<3, 1>(3, 0)(2));
+  this->set_velocity(v);
+  this->set_angular_velocity(angular_v);
 }
 
 } // namespace pose_kit
