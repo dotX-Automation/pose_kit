@@ -117,10 +117,13 @@ KinematicPose::KinematicPose(
     twist_stamped.twist.linear.x,
     twist_stamped.twist.linear.y,
     twist_stamped.twist.linear.z);
-  tf2::Vector3 in;
+  tf2::Vector3 angular_v(
+    twist_stamped.twist.angular.x,
+    twist_stamped.twist.angular.y,
+    twist_stamped.twist.angular.z);
 
   this->set_velocity(v);
-  this->set_angular_velocity(in);
+  this->set_angular_velocity(angular_v);
   this->set_header(header);
 }
 
