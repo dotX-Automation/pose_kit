@@ -187,14 +187,14 @@ public:
   /**
    * @brief Fills a TwistStamped ROS message.
    *
-   * @return TwistStamped TwistStamped ROS message.
+   * @param msg TwistStamped TwistStamped ROS message to fill.
    */
   void to_twist_stamped(geometry_msgs::msg::TwistStamped & msg) const;
 
   /**
    * @brief Fills a TwistWithCovarianceStamped ROS message.
    *
-   * @return TwistWithCovarianceStamped TwistWithCovarianceStamped ROS message.
+   * @param msg TwistWithCovarianceStamped TwistWithCovarianceStamped ROS message to fill.
    */
   void to_twist_with_covariance_stamped(geometry_msgs::msg::TwistWithCovarianceStamped & msg) const;
 

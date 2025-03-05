@@ -178,7 +178,7 @@ public:
   /**
    * @brief Fills and returns a sensor_msgs/Imu message.
    *
-   * @return sensor_msgs/Imu message.
+   * @param msg sensor_msgs/Imu message to fill.
    */
   void to_imu(sensor_msgs::msg::Imu & msg) const;
 
@@ -221,9 +221,6 @@ public:
    * @param dp DynamicPose to copy.
    */
   DynamicPose & operator=(DynamicPose && dp);
-
-  /* Geometric operations. */
-  // TODO
 
 protected:
   /* Internal data. */
