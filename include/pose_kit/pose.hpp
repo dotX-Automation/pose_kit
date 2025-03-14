@@ -22,8 +22,7 @@
  * limitations under the License.
  */
 
-#ifndef POSE_KIT__POSE_HPP_
-#define POSE_KIT__POSE_HPP_
+#pragma once
 
 #include "visibility_control.h"
 
@@ -33,6 +32,9 @@
 
 #include <Eigen/Geometry>
 
+#include <rclcpp/rclcpp.hpp>
+
+#include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2/LinearMath/Vector3.hpp>
 #include <tf2/LinearMath/Quaternion.hpp>
 #include <tf2/LinearMath/Matrix3x3.hpp>
@@ -42,9 +44,6 @@
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <std_msgs/msg/header.hpp>
-
-
-#include <rclcpp/rclcpp.hpp>
 
 namespace pose_kit
 {
@@ -64,7 +63,7 @@ public:
   /**
    * @brief Default constructor.
    */
-  Pose();
+  Pose() = default;
 
   /**
    * @brief Copy constructor.
@@ -158,9 +157,9 @@ public:
   Pose(const geometry_msgs::msg::TransformStamped & msg);
 
   /**
-   * Destructor.
+   * @brief Default destructor.
    */
-  virtual ~Pose();
+  virtual ~Pose() = default;
 
   /**
    * @brief Converts to a PoseStamped ROS message.
@@ -219,13 +218,13 @@ public:
   /**
    * @brief Gets the heading of the rigid body.
    *
-   * @param hdg Heading angle [rad] to be fetched.
+   * @return double Heading angle [rad].
    */
-  inline void get_heading(double & hdg) const
+  inline double get_heading() const
   {
     double r, p, y;
     tf2::getEulerYPR(attitude_, y, p, r);
-    hdg = y;
+    return y;
   }
 
   /**
@@ -260,21 +259,21 @@ public:
   {
     return header_;
   }
-  inline void get_timestamp_ns(uint64_t & ts) const
+  inline uint64_t get_timestamp_ns() const
   {
-    ts = header_.stamp.sec * 1e9 + header_.stamp.nanosec;
+    return header_.stamp.sec * 1e9 + header_.stamp.nanosec;
   }
-  inline void get_timestamp_us(uint64_t & ts) const
+  inline uint64_t get_timestamp_us() const
   {
-    ts = header_.stamp.sec * 1e6 + header_.stamp.nanosec / 1e3;
+    return header_.stamp.sec * 1e6 + header_.stamp.nanosec / 1e3;
   }
-  inline void get_timestamp_ms(uint64_t & ts) const
+  inline uint64_t get_timestamp_ms() const
   {
-    ts = header_.stamp.sec * 1e3 + header_.stamp.nanosec / 1e6;
+    return header_.stamp.sec * 1e3 + header_.stamp.nanosec / 1e6;
   }
-  inline void get_timestamp_s(uint64_t & ts) const
+  inline uint64_t get_timestamp_s() const
   {
-    ts = header_.stamp.sec;
+    return header_.stamp.sec;
   }
   inline void get_frame_id(std::string & id) const
   {
@@ -358,5 +357,3 @@ protected:
 };
 
 } // namespace pose_kit
-
-#endif // POSE_KIT__POSE_HPP_

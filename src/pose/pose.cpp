@@ -22,15 +22,10 @@
  * limitations under the License.
  */
 
-#include <tf2_eigen/tf2_eigen.hpp>
-
 #include <pose_kit/pose.hpp>
 
 namespace pose_kit
 {
-
-Pose::Pose()
-{}
 
 Pose::Pose(const Pose & p)
 {
@@ -158,9 +153,6 @@ Pose & Pose::operator=(Pose && p)
   this->set_header(p.header());
   return *this;
 }
-
-Pose::~Pose()
-{}
 
 void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg)
 {
