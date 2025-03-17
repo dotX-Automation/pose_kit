@@ -91,8 +91,10 @@ Pose::Pose(
 }
 
 Pose::Pose(
-  const Eigen::Vector3d & pos, const Eigen::Quaterniond & attitude,
-  const std_msgs::msg::Header & header, const std::array<double, 36> & cov)
+  const Eigen::Vector3d & pos,
+  const Eigen::Quaterniond & attitude,
+  const std_msgs::msg::Header & header,
+  const std::array<double, 36> & cov)
 {
   tf2::Vector3 p(pos.x(), pos.y(), pos.z());
   tf2::Quaternion q(attitude.x(), attitude.y(), attitude.z(), attitude.w());
@@ -100,7 +102,8 @@ Pose::Pose(
 }
 
 Pose::Pose(
-  const Eigen::Isometry3d & iso, const std_msgs::msg::Header & header,
+  const Eigen::Isometry3d & iso,
+  const std_msgs::msg::Header & header,
   const std::array<double, 36> & cov)
 {
   Eigen::Vector3d pos = iso.translation();
