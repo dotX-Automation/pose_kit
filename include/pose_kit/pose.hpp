@@ -136,7 +136,7 @@ public:
     const std::array<double, 36> & cov = std::array<double, 36>{});
 
   /**
-   * @brief Constructor whit initial position and attitude in Eigen format.
+   * @brief Constructor with initial position and attitude in Eigen format.
    *
    * @param pos Initial position [m].
    * @param attitude Initial attitude quaternion.
