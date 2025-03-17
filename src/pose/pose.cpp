@@ -90,6 +90,24 @@ Pose::Pose(
   this->set_header(header);
 }
 
+Pose::Pose(
+  const Eigen::Vector3d & pos, const Eigen::Quaterniond & attitude,
+  const std_msgs::msg::Header & header, const std::array<double, 36> & cov)
+{
+  tf2::Vector3 p(pos.x(), pos.y(), pos.z());
+  tf2::Quaternion q(attitude.x(), attitude.y(), attitude.z(), attitude.w());
+  Pose(p, q, header, cov);
+}
+
+Pose::Pose(
+  const Eigen::Isometry3d & iso, const std_msgs::msg::Header & header,
+  const std::array<double, 36> & cov)
+{
+  Eigen::Vector3d pos = iso.translation();
+  Eigen::Quaterniond attitude(iso.rotation());
+  Pose(pos, attitude, header, cov);
+}
+
 Pose::Pose(const geometry_msgs::msg::PoseStamped & msg)
 {
   tf2::Vector3 p(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);

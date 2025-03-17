@@ -82,7 +82,7 @@ public:
    */
   Pose(
     double x, double y, double z,
-    const std_msgs::msg::Header & header);
+    const std_msgs::msg::Header & header = std_msgs::msg::Header());
 
   /**
    * @brief Constructor with initial attitude quaternion.
@@ -92,7 +92,7 @@ public:
    */
   Pose(
     const tf2::Quaternion & q,
-    const std_msgs::msg::Header & header);
+    const std_msgs::msg::Header & header = std_msgs::msg::Header());
 
   /**
    * @brief Constructor with initial attitude expressed as euler angles.
@@ -104,7 +104,7 @@ public:
    */
   Pose(
     const tf2::Vector3 & rpy,
-    const std_msgs::msg::Header & header);
+    const std_msgs::msg::Header & header = std_msgs::msg::Header());
 
   /**
    * @brief Constructor with initial position and heading.
@@ -118,21 +118,47 @@ public:
    */
   Pose(
     double x, double y, double z, double heading,
-    const std_msgs::msg::Header & header,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::array<double, 36> & cov = std::array<double, 36>{});
 
   /**
    * @brief Constructor with initial position and attitude.
    *
-   * @param pos Initial position [m].
+   * @param p Initial position [m].
    * @param q Initial attitude quaternion.
    * @param header Pose header.
    * @param cov Initial pose covariance.
    */
   Pose(
-    const tf2::Vector3 & pos,
+    const tf2::Vector3 & p,
     const tf2::Quaternion & q,
-    const std_msgs::msg::Header & header,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::array<double, 36> & cov = std::array<double, 36>{});
+
+  /**
+   * @brief Constructor whit initial position and attitude in Eigen format.
+   *
+   * @param pos Initial position [m].
+   * @param attitude Initial attitude quaternion.
+   * @param header Pose header.
+   * @param cov Initial pose covariance.
+   */
+  Pose(
+    const Eigen::Vector3d & pos,
+    const Eigen::Quaterniond & attitude,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::array<double, 36> & cov = std::array<double, 36>{});
+
+  /**
+   * @brief Constructor that builds from an Eigen isometry.
+   *
+   * @param iso Eigen isometry to build from.
+   * @param header Pose header.
+   * @param cov Initial pose covariance.
+   */
+  Pose(
+    const Eigen::Isometry3d & iso,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::array<double, 36> & cov = std::array<double, 36>{});
 
   /**
@@ -284,9 +310,22 @@ public:
   {
     position_ = pos;
   }
+  inline void set_position(const Eigen::Vector3d & pos)
+  {
+    position_.setX(pos.x());
+    position_.setY(pos.y());
+    position_.setZ(pos.z());
+  }
   inline void set_attitude(const tf2::Quaternion & q)
   {
     attitude_ = q;
+  }
+  inline void set_attitude(const Eigen::Quaterniond & q)
+  {
+    attitude_.setX(q.x());
+    attitude_.setY(q.y());
+    attitude_.setZ(q.z());
+    attitude_.setW(q.w());
   }
   inline void set_pose_covariance(const std::array<double, 36> & cov)
   {
