@@ -37,8 +37,9 @@ target_compile_definitions(pose PRIVATE "POSE_BUILDING_LIBRARY")
 target_include_directories(pose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+target_link_libraries(pose
+  Eigen3::Eigen)
 ament_target_dependencies(pose
-  Eigen3
   geometry_msgs
   rclcpp
   std_msgs
@@ -54,9 +55,9 @@ target_include_directories(kinematicpose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(kinematicpose
+  Eigen3::Eigen
   pose)
 ament_target_dependencies(kinematicpose
-  Eigen3
   geometry_msgs
   tf2
   std_msgs)
@@ -70,9 +71,9 @@ target_include_directories(dynamicpose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(dynamicpose
+  Eigen3::Eigen
   kinematicpose)
 ament_target_dependencies(dynamicpose
-  Eigen3
   sensor_msgs
   tf2)
 
