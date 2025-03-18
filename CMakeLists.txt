@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(pose_kit)
 
 set(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -30,13 +30,13 @@ find_package(tf2 REQUIRED)
 find_package(tf2_eigen REQUIRED)
 
 # Pose library configuration
-add_library(pose SHARED
-  src/pose/pose.cpp)
+add_library(pose SHARED src/pose/pose.cpp)
+add_library(pose_kit::pose ALIAS pose)
 target_compile_features(pose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_definitions(pose PRIVATE "POSE_BUILDING_LIBRARY")
 target_include_directories(pose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 ament_target_dependencies(pose
   Eigen3
   geometry_msgs
@@ -46,13 +46,13 @@ ament_target_dependencies(pose
   tf2_eigen)
 
 # Kinematic Pose library configuration
-add_library(kinematicpose SHARED
-  src/kinematic_pose/kinematic_pose.cpp)
+add_library(kinematicpose SHARED src/kinematic_pose/kinematic_pose.cpp)
+add_library(pose_kit::kinematicpose ALIAS kinematicpose)
 target_compile_features(kinematicpose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_definitions(kinematicpose PRIVATE "KINEMATIC_POSE_BUILDING_LIBRARY")
 target_include_directories(kinematicpose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(kinematicpose
   pose)
 ament_target_dependencies(kinematicpose
@@ -62,13 +62,13 @@ ament_target_dependencies(kinematicpose
   std_msgs)
 
 # Dynamic Pose library configuration
-add_library(dynamicpose SHARED
-  src/dynamic_pose/dynamic_pose.cpp)
+add_library(dynamicpose SHARED src/dynamic_pose/dynamic_pose.cpp)
+add_library(pose_kit::dynamicpose ALIAS dynamicpose)
 target_compile_features(dynamicpose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_definitions(dynamicpose PRIVATE "DYNAMIC_POSE_BUILDING_LIBRARY")
 target_include_directories(dynamicpose PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_link_libraries(dynamicpose
   kinematicpose)
 ament_target_dependencies(dynamicpose
@@ -82,7 +82,7 @@ install(
   DESTINATION include)
 install(
   TARGETS pose kinematicpose dynamicpose
-  EXPORT pose_kitTargets
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -101,7 +101,7 @@ if(BUILD_TESTING)
 endif()
 
 # Export all dependencies and library targets for this package
-ament_export_targets(pose_kitTargets HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(eigen3_cmake_module)
 ament_export_dependencies(
   Eigen3
