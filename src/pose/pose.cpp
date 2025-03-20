@@ -95,21 +95,21 @@ Pose::Pose(
   const Eigen::Quaterniond & attitude,
   const std_msgs::msg::Header & header,
   const std::array<double, 36> & cov)
-{
-  tf2::Vector3 p(pos.x(), pos.y(), pos.z());
-  tf2::Quaternion q(attitude.x(), attitude.y(), attitude.z(), attitude.w());
-  Pose(p, q, header, cov);
-}
+: Pose(
+    tf2::Vector3(pos.x(), pos.y(), pos.z()),
+    tf2::Quaternion(attitude.x(), attitude.y(), attitude.z(), attitude.w()),
+    header,
+    cov) {}
 
 Pose::Pose(
   const Eigen::Isometry3d & iso,
   const std_msgs::msg::Header & header,
   const std::array<double, 36> & cov)
-{
-  Eigen::Vector3d pos = iso.translation();
-  Eigen::Quaterniond attitude(iso.rotation());
-  Pose(pos, attitude, header, cov);
-}
+: Pose(
+    iso.translation(),
+    Eigen::Quaterniond(iso.rotation()),
+    header,
+    cov) {}
 
 Pose::Pose(const geometry_msgs::msg::PoseStamped & msg)
 {
