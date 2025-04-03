@@ -175,7 +175,7 @@ Pose & Pose::operator=(Pose && p)
   return *this;
 }
 
-void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg)
+void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const
 {
   msg.set__header(this->header());
   msg.pose.position.set__x(this->position().x());
@@ -187,7 +187,7 @@ void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg)
   msg.pose.orientation.set__w(this->attitude().w());
 }
 
-void Pose::to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg)
+void Pose::to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg) const
 {
   msg.set__header(this->header());
   msg.pose.pose.position.set__x(this->position().x());
