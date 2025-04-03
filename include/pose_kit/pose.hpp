@@ -192,14 +192,14 @@ public:
    *
    * @param msg PoseStamped ROS message to fill.
    */
-  void to_pose_stamped(geometry_msgs::msg::PoseStamped & msg);
+  void to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const;
 
   /**
    * @brief Converts to a PoseWithCovarianceStamped ROS message.
    *
    * @param msg PoseWithCovarianceStamped ROS message to fill.
    */
-  void to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg);
+  void to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg) const;
 
   /**
    * @brief Gets the position of the rigid body in Eigen format.
