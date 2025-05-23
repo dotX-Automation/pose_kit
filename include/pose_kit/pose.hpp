@@ -333,8 +333,10 @@ public:
   }
   inline void set_heading(double heading)
   {
+    Eigen::Vector3d rpy = Eigen::Vector3d::Zero();
     tf2::Quaternion q = tf2::Quaternion::getIdentity();
-    q.setRPY(0.0, 0.0, heading);
+    this->get_rpy(rpy);
+    q.setRPY(rpy.x(), rpy.y(), heading);
     this->set_attitude(q);
   }
   inline void set_pose_covariance(const std::array<double, 36> & cov)
