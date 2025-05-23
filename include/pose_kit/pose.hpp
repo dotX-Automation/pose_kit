@@ -301,6 +301,10 @@ public:
   {
     return header_.stamp.sec;
   }
+  inline void get_timestamp(rclcpp::Time & time) const
+  {
+    time = header_.stamp;
+  }
   inline void get_frame_id(std::string & id) const
   {
     id = header_.frame_id;
@@ -326,6 +330,14 @@ public:
     attitude_.setY(q.y());
     attitude_.setZ(q.z());
     attitude_.setW(q.w());
+  }
+  inline void set_heading(double heading)
+  {
+    Eigen::Vector3d rpy = Eigen::Vector3d::Zero();
+    tf2::Quaternion q = tf2::Quaternion::getIdentity();
+    this->get_rpy(rpy);
+    q.setRPY(rpy.x(), rpy.y(), heading);
+    this->set_attitude(q);
   }
   inline void set_pose_covariance(const std::array<double, 36> & cov)
   {
