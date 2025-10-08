@@ -164,6 +164,32 @@ public:
     const std::array<double, 36> & twist_cov = std::array<double, 36>{},
     const std::array<double, 36> & accel_cov = std::array<double, 36>{});
 
+  /**
+   * @brief Constructor with initial position, attitude, linear and angular velocity and acceleration, in Eigen format.
+   *
+   * @param p Initial position [m].
+   * @param q Initial attitude quaternion.
+   * @param v Initial linear velocity [m/s].
+   * @param angular_v Initial angular velocity [rad/s].
+   * @param a Initial linear acceleration [m/s^2].
+   * @param angular_a Initial angular acceleration [rad/s^2].
+   * @param header ROS header.
+   * @param cov Initial covariance matrix.
+   * @param twist_cov Initial twist covariance matrix.
+   * @param accel_cov Initial acceleration covariance matrix.
+   */
+  DynamicPose(
+    const Eigen::Vector3d & p,
+    const Eigen::Quaterniond & q,
+    const Eigen::Vector3d & v,
+    const Eigen::Vector3d & angular_v,
+    const Eigen::Vector3d & a,
+    const Eigen::Vector3d & angular_a,
+    const std_msgs::msg::Header & header,
+    const std::array<double, 36> & cov = std::array<double, 36>{},
+    const std::array<double, 36> & twist_cov = std::array<double, 36>{},
+    const std::array<double, 36> & accel_cov = std::array<double, 36>{});
+
   DynamicPose(Pose p)
   : KinematicPose(std::move(p)) {}
 

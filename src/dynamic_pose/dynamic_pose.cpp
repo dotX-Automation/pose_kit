@@ -111,6 +111,26 @@ DynamicPose::DynamicPose(
   this->set_acceleration_covariance(accel_cov);
 }
 
+DynamicPose::DynamicPose(
+  const Eigen::Vector3d & p,
+  const Eigen::Quaterniond & q,
+  const Eigen::Vector3d & v,
+  const Eigen::Vector3d & angular_v,
+  const Eigen::Vector3d & a,
+  const Eigen::Vector3d & angular_a,
+  const std_msgs::msg::Header & header,
+  const std::array<double, 36> & cov,
+  const std::array<double, 36> & twist_cov,
+  const std::array<double, 36> & accel_cov)
+: KinematicPose(p, q, v, angular_v, header, cov, twist_cov)
+{
+  tf2::Vector3 a_tf(a.x(), a.y(), a.z());
+  tf2::Vector3 angular_a_tf(angular_a.x(), angular_a.y(), angular_a.z());
+  this->set_acceleration(a_tf);
+  this->set_angular_acceleration(angular_a_tf);
+  this->set_acceleration_covariance(accel_cov);
+}
+
 DynamicPose & DynamicPose::operator=(const DynamicPose & dp)
 {
   this->set_position(dp.position());

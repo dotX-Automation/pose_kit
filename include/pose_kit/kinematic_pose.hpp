@@ -153,6 +153,26 @@ public:
     const std::array<double, 36> & twist_cov = std::array<double, 36>{});
 
   /**
+   * @brief Constructor with initial position, attitude, linear and angular velocity in Eigen format.
+   *
+   * @param p Initial position [m].
+   * @param q Initial attitude quaternion.
+   * @param vel Initial linear velocity [m/s].
+   * @param angular_v Initial angular velocity [rad/s].
+   * @param header ROS header.
+   * @param cov Initial covariance matrix.
+   * @param twist_cov Initial twist covariance matrix.
+   */
+  KinematicPose(
+    const Eigen::Vector3d & p,
+    const Eigen::Quaterniond & q,
+    const Eigen::Vector3d & v,
+    const Eigen::Vector3d & angular_v,
+    const std_msgs::msg::Header & header,
+    const std::array<double, 36> & cov = std::array<double, 36>{},
+    const std::array<double, 36> & twist_cov = std::array<double, 36>{});
+
+  /**
    * @brief Constructor that builds from a PoseStamped and a TwistStamped ROS messages.
    *
    * @param pose_stamped PoseStamped ROS message.
@@ -190,6 +210,13 @@ public:
    * @param msg TwistStamped TwistStamped ROS message to fill.
    */
   void to_twist_stamped(geometry_msgs::msg::TwistStamped & msg) const;
+
+  /**
+   * @brief Fills and returns a TwistWithCovariance ROS message.
+   *
+   * @param msg TwistWithCovariance TwistWithCovariance ROS message to fill.
+   */
+  void to_twist_with_covariance(geometry_msgs::msg::TwistWithCovariance & msg) const;
 
   /**
    * @brief Fills a TwistWithCovarianceStamped ROS message.

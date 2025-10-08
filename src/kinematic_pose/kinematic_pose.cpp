@@ -108,6 +108,23 @@ KinematicPose::KinematicPose(
 }
 
 KinematicPose::KinematicPose(
+  const Eigen::Vector3d & p,
+  const Eigen::Quaterniond & q,
+  const Eigen::Vector3d & v,
+  const Eigen::Vector3d & angular_v,
+  const std_msgs::msg::Header & header,
+  const std::array<double, 36> & cov,
+  const std::array<double, 36> & twist_cov)
+: Pose(p, q, header, cov)
+{
+  tf2::Vector3 tf2_v(v.x(), v.y(), v.z());
+  tf2::Vector3 tf2_angular_v(angular_v.x(), angular_v.y(), angular_v.z());
+  this->set_velocity(tf2_v);
+  this->set_angular_velocity(tf2_angular_v);
+  this->set_twist_covariance(twist_cov);
+}
+
+KinematicPose::KinematicPose(
   const geometry_msgs::msg::PoseStamped & pose_stamped,
   const geometry_msgs::msg::TwistStamped & twist_stamped,
   const std_msgs::msg::Header & header)
@@ -178,6 +195,17 @@ void KinematicPose::to_twist_stamped(geometry_msgs::msg::TwistStamped & msg) con
   msg.twist.angular.set__x(this->angular_velocity().x());
   msg.twist.angular.set__y(this->angular_velocity().y());
   msg.twist.angular.set__z(this->angular_velocity().z());
+}
+
+void KinematicPose::to_twist_with_covariance(geometry_msgs::msg::TwistWithCovariance & msg) const
+{
+  msg.twist.linear.set__x(this->velocity().x());
+  msg.twist.linear.set__y(this->velocity().y());
+  msg.twist.linear.set__z(this->velocity().z());
+  msg.twist.angular.set__x(this->angular_velocity().x());
+  msg.twist.angular.set__y(this->angular_velocity().y());
+  msg.twist.angular.set__z(this->angular_velocity().z());
+  msg.set__covariance(this->twist_covariance());
 }
 
 void KinematicPose::to_twist_with_covariance_stamped(geometry_msgs::msg::TwistWithCovarianceStamped & msg)

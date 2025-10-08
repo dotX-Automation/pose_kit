@@ -195,6 +195,13 @@ public:
   void to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const;
 
   /**
+   * @brief Converts to a PoseWithCovariance ROS message.
+   *
+   * @param msg PoseWithCovariance ROS message to fill.
+   */
+  void to_pose_with_covariance(geometry_msgs::msg::PoseWithCovariance & msg) const;
+
+  /**
    * @brief Converts to a PoseWithCovarianceStamped ROS message.
    *
    * @param msg PoseWithCovarianceStamped ROS message to fill.

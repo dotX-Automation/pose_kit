@@ -187,6 +187,18 @@ void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const
   msg.pose.orientation.set__w(this->attitude().w());
 }
 
+void Pose::to_pose_with_covariance(geometry_msgs::msg::PoseWithCovariance & msg) const
+{
+  msg.pose.position.set__x(this->position().x());
+  msg.pose.position.set__y(this->position().y());
+  msg.pose.position.set__z(this->position().z());
+  msg.pose.orientation.set__x(this->attitude().x());
+  msg.pose.orientation.set__y(this->attitude().y());
+  msg.pose.orientation.set__z(this->attitude().z());
+  msg.pose.orientation.set__w(this->attitude().w());
+  msg.set__covariance(this->pose_covariance());
+}
+
 void Pose::to_pose_with_covariance_stamped(geometry_msgs::msg::PoseWithCovarianceStamped & msg) const
 {
   msg.set__header(this->header());
