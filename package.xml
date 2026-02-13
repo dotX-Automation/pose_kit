@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>pose_kit</name>
-  <version>1.0.10</version>
+  <version>2.0.0</version>
   <description>3D rigid body state data objects with basic operations.</description>
   <maintainer email="info@dotxautomation.com">dotX Automation s.r.l.</maintainer>
   <license>Apache-2.0</license>
@@ -16,6 +16,7 @@
 
   <build_export_depend>eigen</build_export_depend>
 
+  <depend>dua_math</depend>
   <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>

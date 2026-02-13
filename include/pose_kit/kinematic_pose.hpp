@@ -1,13 +1,11 @@
 /**
- * Kinematic pose library, based on Eigen geometry types.
+ * Kinematic pose library.
  *
- * Roberto Masocco <r.masocco@dotxautomation.com>
- *
- * April 14, 2023
+ * February 13, 2026
  */
 
 /**
- * Copyright 2024 dotX Automation s.r.l.
+ * Copyright 2026 dotX Automation s.r.l.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,28 +20,12 @@
  * limitations under the License.
  */
 
-#ifndef POSE_KIT__KINEMATIC_POSE_HPP_
-#define POSE_KIT__KINEMATIC_POSE_HPP_
-
-#include "visibility_control.h"
-
-#include <array>
-#include <memory>
-
-#include <Eigen/Geometry>
-
-#include <tf2/LinearMath/Vector3.hpp>
-#include <tf2/LinearMath/Quaternion.hpp>
-#include <tf2/LinearMath/Matrix3x3.hpp>
-#include <tf2/utils.hpp>
-
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <geometry_msgs/msg/twist_stamped.hpp>
-#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
-#include <std_msgs/msg/header.hpp>
+#pragma once
 
 #include <pose_kit/pose.hpp>
+
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
 
 namespace pose_kit
 {
@@ -51,237 +33,142 @@ namespace pose_kit
 /**
  * Represents position, orientation, and velocity of an autonomous agent.
  */
+
 class POSE_KIT_PUBLIC KinematicPose : public Pose
 {
 public:
   using SharedPtr = std::shared_ptr<KinematicPose>;
-  using WeakPtr = std::weak_ptr<KinematicPose>;
-  using UniquePtr = std::unique_ptr<KinematicPose>;
   using ConstSharedPtr = std::shared_ptr<const KinematicPose>;
+  using WeakPtr = std::weak_ptr<KinematicPose>;
   using ConstWeakPtr = std::weak_ptr<const KinematicPose>;
+  using UniquePtr = std::unique_ptr<KinematicPose>;
+  using ConstUniquePtr = std::unique_ptr<const KinematicPose>;
 
-  /**
-   * @brief Default constructor.
-   */
-  KinematicPose();
+  using Matrix6d = Pose::Matrix6d;
+  using PoseCovariance = Pose::PoseCovariance;
+  using TwistCovariance = std::array<double, 36>;
 
-  /**
-   * @brief Copy constructor.
-   *
-   * @param kp Pose to copy.
-   */
-  KinematicPose(const KinematicPose & kp);
+  // ========== Constructors and destructors ==========
 
-  /**
-   * @brief Constructor with initial position and linear velocity.
-   *
-   * @param x Initial X position [m].
-   * @param y Initial Y position [m].
-   * @param z Initial Z position [m].
-   * @param vx Initial X linear velocity [m/s].
-   * @param vy Initial Y linear velocity [m/s].
-   * @param vz Initial Z linear velocity [m/s].
-   * @param header ROS header.
-   */
+  // ---------- Special members ----------
+
+  KinematicPose() = default;
+  KinematicPose(const KinematicPose &) = default;
+  KinematicPose(KinematicPose &&) noexcept = default;
+  KinematicPose & operator=(const KinematicPose &) = default;
+  KinematicPose & operator=(KinematicPose &&) noexcept = default;
+  ~KinematicPose() override = default;
+
+  // ---------- Canonical constructors ----------
+
   KinematicPose(
-    double x, double y, double z,
-    double vx, double vy, double vz,
-    const std_msgs::msg::Header & header);
+    const tf2::Vector3 & pos,
+    const tf2::Quaternion & att,
+    const tf2::Vector3 & lin_vel,
+    const tf2::Vector3 & ang_vel,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::string & child_frame_id = std::string(),
+    const PoseCovariance & pose_cov = PoseCovariance{},
+    const TwistCovariance & twist_cov = TwistCovariance{});
 
-  /**
-   * @brief Constructor with initial attitude and angular velocity.
-   *
-   * @param q Initial attitude quaternion.
-   * @param angular_v Initial angular velocity [rad/s].
-   * @param header ROS header.
-   */
   KinematicPose(
-    const tf2::Quaternion & q,
-    const tf2::Vector3 & angular_v,
-    const std_msgs::msg::Header & header);
+    const Eigen::Vector3d & pos,
+    const Eigen::Quaterniond & att,
+    const Eigen::Vector3d & lin_vel,
+    const Eigen::Vector3d & ang_vel,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::string & child_frame_id = std::string(),
+    const PoseCovariance & pose_cov = PoseCovariance{},
+    const TwistCovariance & twist_cov = TwistCovariance{});
 
-  /**
-   * @brief Constructor with initial euler angles and angular velocity.
-   *
-   * @param rpy Initial euler angles [rad].
-   * @param angular_v Initial angular velocity [rad/s].
-   * @param header ROS header.
-   */
-  KinematicPose(
-    const tf2::Vector3 & rpy,
-    const tf2::Vector3 & angular_v,
-    const std_msgs::msg::Header & header);
+  // ---------- ROS message constructors ----------
 
-  /**
-   * @brief Constructor with initial position, linear velocity, and heading.
-   *
-   * @param x Initial X position [m].
-   * @param y Initial Y position [m].
-   * @param z Initial Z position [m].
-   * @param vx Initial X linear velocity [m/s].
-   * @param vy Initial Y linear velocity [m/s].
-   * @param vz Initial Z linear velocity [m/s].
-   * @param heading Initial heading [rad].
-   * @param header ROS header.
-   * @param cov Initial covariance matrix.
-   */
-  KinematicPose(
-    double x, double y, double z,
-    double vx, double vy, double vz,
-    double heading,
-    const std_msgs::msg::Header & header,
-    const std::array<double, 36> & cov = std::array<double, 36>{});
+  explicit KinematicPose(
+    const geometry_msgs::msg::PoseStamped & pose_msg,
+    const geometry_msgs::msg::TwistStamped & twist_msg,
+    const std::string & child_frame_id = std::string(),
+    const PoseCovariance & pose_cov = PoseCovariance{},
+    const TwistCovariance & twist_cov = TwistCovariance{});
 
-  /**
-   * @brief Constructor with initial position, attitude, linear and angular velocity.
-   *
-   * @param p Initial position [m].
-   * @param q Initial attitude quaternion.
-   * @param vel Initial linear velocity [m/s].
-   * @param angular_v Initial angular velocity [rad/s].
-   * @param header ROS header.
-   * @param cov Initial covariance matrix.
-   * @param twist_cov Initial twist covariance matrix.
-   */
-  KinematicPose(
-    const tf2::Vector3 & p,
-    const tf2::Quaternion & q,
-    const tf2::Vector3 & v,
-    const tf2::Vector3 & angular_v,
-    const std_msgs::msg::Header & header,
-    const std::array<double, 36> & cov = std::array<double, 36>{},
-    const std::array<double, 36> & twist_cov = std::array<double, 36>{});
+  explicit KinematicPose(
+    const geometry_msgs::msg::PoseWithCovarianceStamped & pose_msg,
+    const geometry_msgs::msg::TwistWithCovarianceStamped & twist_msg,
+    const std::string & child_frame_id = std::string());
 
-  /**
-   * @brief Constructor with initial position, attitude, linear and angular velocity in Eigen format.
-   *
-   * @param p Initial position [m].
-   * @param q Initial attitude quaternion.
-   * @param vel Initial linear velocity [m/s].
-   * @param angular_v Initial angular velocity [rad/s].
-   * @param header ROS header.
-   * @param cov Initial covariance matrix.
-   * @param twist_cov Initial twist covariance matrix.
-   */
-  KinematicPose(
-    const Eigen::Vector3d & p,
-    const Eigen::Quaterniond & q,
-    const Eigen::Vector3d & v,
-    const Eigen::Vector3d & angular_v,
-    const std_msgs::msg::Header & header,
-    const std::array<double, 36> & cov = std::array<double, 36>{},
-    const std::array<double, 36> & twist_cov = std::array<double, 36>{});
+  // ========== ROS message converters ==========
 
-  /**
-   * @brief Constructor that builds from a PoseStamped and a TwistStamped ROS messages.
-   *
-   * @param pose_stamped PoseStamped ROS message.
-   * @param twist_stamped TwistStamped ROS message.
-   * @param header ROS header to use (to conciliate the two headers of the messages).
-   */
-  KinematicPose(
-    const geometry_msgs::msg::PoseStamped & pose_stamped,
-    const geometry_msgs::msg::TwistStamped & twist_stamped,
-    const std_msgs::msg::Header & header);
+  void to_twist(geometry_msgs::msg::Twist & msg) const;
 
-  /**
-   * @brief Constructor that builds from a PoseWithCovarianceStamped and a TwistWithCovarianceStamped ROS messages.
-   *
-   * @param pose_with_cov_stamped PoseWithCovarianceStamped ROS message.
-   * @param twist_with_cov_stamped TwistWithCovarianceStamped ROS message.
-   * @param header ROS header to use (to conciliate the two headers of the messages).
-   */
-  KinematicPose(
-    const geometry_msgs::msg::PoseWithCovarianceStamped & pose_with_cov_stamped,
-    const geometry_msgs::msg::TwistWithCovarianceStamped & twist_with_cov_stamped,
-    const std_msgs::msg::Header & header);
-
-  KinematicPose(Pose p)
-  : Pose(std::move(p)) {}
-
-  /**
-   * @brief Destructor.
-   */
-  virtual ~KinematicPose();
-
-  /**
-   * @brief Fills a TwistStamped ROS message.
-   *
-   * @param msg TwistStamped TwistStamped ROS message to fill.
-   */
   void to_twist_stamped(geometry_msgs::msg::TwistStamped & msg) const;
 
-  /**
-   * @brief Fills and returns a TwistWithCovariance ROS message.
-   *
-   * @param msg TwistWithCovariance TwistWithCovariance ROS message to fill.
-   */
   void to_twist_with_covariance(geometry_msgs::msg::TwistWithCovariance & msg) const;
 
-  /**
-   * @brief Fills a TwistWithCovarianceStamped ROS message.
-   *
-   * @param msg TwistWithCovarianceStamped TwistWithCovarianceStamped ROS message to fill.
-   */
   void to_twist_with_covariance_stamped(geometry_msgs::msg::TwistWithCovarianceStamped & msg) const;
 
-  [[nodiscard]] inline const tf2::Vector3 & velocity() const
+  // ========== Getters and setters ==========
+
+  // ---------- Linear velocity ----------
+
+  inline void set_linear_velocity(const tf2::Vector3 & lin_vel) {lin_vel_ = lin_vel;}
+
+  inline void set_linear_velocity(const Eigen::Vector3d & lin_vel)
   {
-    return velocity_;
-  }
-  [[nodiscard]] inline const tf2::Vector3 & angular_velocity() const
-  {
-    return angular_velocity_;
-  }
-  [[nodiscard]] inline const std::array<double, 36> & twist_covariance() const
-  {
-    return twist_covariance_;
+    lin_vel_.setX(lin_vel.x());
+    lin_vel_.setY(lin_vel.y());
+    lin_vel_.setZ(lin_vel.z());
   }
 
-  inline void set_velocity(const tf2::Vector3 & v)
+  [[nodiscard]] inline const tf2::Vector3 & linear_velocity() const {return lin_vel_;}
+
+  inline void get_linear_velocity(Eigen::Vector3d & lin_vel) const
   {
-    velocity_ = v;
-  }
-  inline void set_angular_velocity(const tf2::Vector3 & angular_v)
-  {
-    angular_velocity_ = angular_v;
-  }
-  inline void set_twist_covariance(const std::array<double, 36> & twist_cov)
-  {
-    twist_covariance_ = twist_cov;
+    lin_vel.x() = lin_vel_.x();
+    lin_vel.y() = lin_vel_.y();
+    lin_vel.z() = lin_vel_.z();
   }
 
-  /**
-   * @brief Applies a rigid transformation to the pose.
-   *
-   * @param tf ROS transformation to apply.
-   * @param new_frame_id New frame ID to set (optional).
-   */
-  void rigid_transform(
-    const geometry_msgs::msg::TransformStamped & tf,
-    const std::string & new_frame_id = "") override;
+  // ---------- Angular velocity ----------
 
-  /**
-   * @brief Copy assignment operator.
-   *
-   * @param kp KinematicPose to copy.
-   */
-  KinematicPose & operator=(const KinematicPose & kp);
+  inline void set_angular_velocity(const tf2::Vector3 & w) {ang_vel_ = w;}
 
-  /**
-   * @brief Move assignment operator.
-   *
-   * @param kp KinematicPose to copy.
-   */
-  KinematicPose & operator=(KinematicPose && kp);
+  inline void set_angular_velocity(const Eigen::Vector3d & w)
+  {
+    ang_vel_.setX(w.x());
+    ang_vel_.setY(w.y());
+    ang_vel_.setZ(w.z());
+  }
+
+  [[nodiscard]] inline const tf2::Vector3 & angular_velocity() const {return ang_vel_;}
+
+  inline void get_angular_velocity(Eigen::Vector3d & w) const
+  {
+    w.x() = ang_vel_.x();
+    w.y() = ang_vel_.y();
+    w.z() = ang_vel_.z();
+  }
+
+  // ---------- Twist covariance ----------
+
+  inline void set_twist_covariance(const TwistCovariance & c) {twist_cov_ = c;}
+
+  [[nodiscard]] inline const TwistCovariance & twist_covariance() const {return twist_cov_;}
+
+  // ========== Main methods ==========
+
+  void apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf) override;
+
+  void apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf) override;
+
+  void apply_transform_chain(
+    const geometry_msgs::msg::TransformStamped & tf_pre,
+    const geometry_msgs::msg::TransformStamped & tf_post) override;
 
 protected:
-  /* Internal data. */
-  tf2::Vector3 velocity_ = {0.0, 0.0, 0.0}; // [m/s]
-  tf2::Vector3 angular_velocity_ = {0.0, 0.0, 0.0}; // [rad/s]
-  std::array<double, 36> twist_covariance_{};
+  // ========== Internal variables  ==========
+
+  tf2::Vector3 lin_vel_{0.0, 0.0, 0.0}; // [m/s]
+  tf2::Vector3 ang_vel_{0.0, 0.0, 0.0}; // [rad/s]
+  TwistCovariance twist_cov_{};
 };
 
 } // namespace pose_kit
-
-#endif // POSE_KIT__KINEMATIC_POSE_HPP_
