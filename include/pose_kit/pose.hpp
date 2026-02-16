@@ -166,7 +166,7 @@ public:
       header, child_frame_id, pose_cov);
   }
 
-  static Pose FromIsometry(
+  static Pose from_isometry(
     const Eigen::Isometry3d & iso,
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
@@ -324,6 +324,15 @@ public:
     set_attitude(att);
   }
 
+  inline void get_rpy(tf2::Vector3 & rpy) const
+  {
+    double roll, pitch, yaw;
+    tf2::getEulerYPR(att_, yaw, pitch, roll);
+    rpy.setX(roll);
+    rpy.setY(pitch);
+    rpy.setZ(yaw);
+  }
+
   inline void get_rpy(Eigen::Vector3d & rpy) const
   {
     double roll, pitch, yaw;
@@ -376,9 +385,9 @@ public:
 
   // ---------- Time ----------
 
-  inline void set_timestamp(const rclcpp::Time & t) {header_.stamp = t;}
+  inline void set_timestamp(const rclcpp::Time & time) {header_.stamp = time;}
 
-  inline rclcpp::Time timestamp() const {return rclcpp::Time(header_.stamp);}
+  inline void get_timestamp(rclcpp::Time & time) const {time = header_.stamp;}
 
   inline void set_timestamp_s(uint64_t timestamp_s)
   {
