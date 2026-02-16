@@ -57,6 +57,34 @@ Pose::Pose(
   set_attitude(att);
 }
 
+Pose::Pose(
+  const tf2::Vector3 & pos,
+  const tf2::Vector3 & rpy,
+  const std_msgs::msg::Header & header,
+  const std::string & child_frame_id,
+  const PoseCovariance & pose_cov)
+: pos_(pos),
+  header_(header),
+  child_frame_id_(child_frame_id),
+  pose_cov_(pose_cov)
+{
+  set_rpy(rpy);
+}
+
+Pose::Pose(
+  const Eigen::Vector3d & pos,
+  const Eigen::Vector3d & rpy,
+  const std_msgs::msg::Header & header,
+  const std::string & child_frame_id,
+  const PoseCovariance & pose_cov)
+: header_(header),
+  child_frame_id_(child_frame_id),
+  pose_cov_(pose_cov)
+{
+  set_position(pos);
+  set_rpy(rpy);
+}
+
 // ---------- ROS message constructors ----------
 
 Pose::Pose(
@@ -141,7 +169,7 @@ Pose::Pose(
   set_child_frame_id(tf_msg.child_frame_id);
 }
 
-// ---------- ROS messages ----------
+// ========== ROS message converters ==========
 
 void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const
 {

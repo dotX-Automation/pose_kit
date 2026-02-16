@@ -91,32 +91,34 @@ public:
     const std::string & child_frame_id = std::string(),
     const PoseCovariance & pose_cov = PoseCovariance{});
 
+  Pose(
+    const tf2::Vector3 & pos,
+    const tf2::Vector3 & rpy,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::string & child_frame_id = std::string(),
+    const PoseCovariance & pose_cov = PoseCovariance{});
+
+  Pose(
+    const Eigen::Vector3d & pos,
+    const Eigen::Vector3d & rpy,
+    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
+    const std::string & child_frame_id = std::string(),
+    const PoseCovariance & pose_cov = PoseCovariance{});
+
   // ---------- Factories ----------
 
-  static Pose Identity(
+  static Pose identity(
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
     const PoseCovariance & pose_cov = PoseCovariance{})
   {
     return Pose(
-      Eigen::Vector3d::Zero(),
-      Eigen::Quaterniond::Identity(),
+      tf2::Vector3(0.0, 0.0, 0.0),
+      tf2::Quaternion::getIdentity(),
       header, child_frame_id, pose_cov);
   }
 
-  static Pose FromPosition(
-    const Eigen::Vector3d & pos,
-    const std_msgs::msg::Header & header = std_msgs::msg::Header(),
-    const std::string & child_frame_id = std::string(),
-    const PoseCovariance & pose_cov = PoseCovariance{})
-  {
-    return Pose(
-      pos,
-      Eigen::Quaterniond::Identity(),
-      header, child_frame_id, pose_cov);
-  }
-
-  static Pose FromPosition(
+  static Pose from_position(
     const tf2::Vector3 & pos,
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
@@ -128,19 +130,19 @@ public:
       header, child_frame_id, pose_cov);
   }
 
-  static Pose FromAttitude(
-    const Eigen::Quaterniond & att,
+  static Pose from_position(
+    const Eigen::Vector3d & pos,
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
     const PoseCovariance & pose_cov = PoseCovariance{})
   {
     return Pose(
-      Eigen::Vector3d::Zero(),
-      att,
+      pos,
+      Eigen::Quaterniond::Identity(),
       header, child_frame_id, pose_cov);
   }
 
-  static Pose FromAttitude(
+  static Pose from_attitude(
     const tf2::Quaternion & att,
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
@@ -152,17 +154,14 @@ public:
       header, child_frame_id, pose_cov);
   }
 
-  static Pose FromRPY(
-    const Eigen::Vector3d & pos,
-    const Eigen::Vector3d & rpy,
+  static Pose from_attitude(
+    const Eigen::Quaterniond & att,
     const std_msgs::msg::Header & header = std_msgs::msg::Header(),
     const std::string & child_frame_id = std::string(),
     const PoseCovariance & pose_cov = PoseCovariance{})
   {
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
-    att.setRPY(rpy.x(), rpy.y(), rpy.z());
     return Pose(
-      tf2::Vector3(pos.x(), pos.y(), pos.z()),
+      Eigen::Vector3d::Zero(),
       att,
       header, child_frame_id, pose_cov);
   }
@@ -309,6 +308,13 @@ public:
     double roll, pitch, yaw;
     tf2::getEulerYPR(att_, yaw, pitch, roll);
     return yaw;
+  }
+
+  inline void set_rpy(const tf2::Vector3 & rpy)
+  {
+    tf2::Quaternion att = tf2::Quaternion::getIdentity();
+    att.setRPY(rpy.x(), rpy.y(), rpy.z());
+    set_attitude(att);
   }
 
   inline void set_rpy(const Eigen::Vector3d & rpy)
