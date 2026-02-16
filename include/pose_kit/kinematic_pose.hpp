@@ -155,13 +155,11 @@ public:
 
   // ========== Main methods ==========
 
-  void apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf) override;
+  void change_parent_frame(const Pose & pose) override;
 
-  void apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf) override;
+  void change_child_frame_inverse(const Pose & pose) override;
 
-  void apply_transform_chain(
-    const geometry_msgs::msg::TransformStamped & tf_pre,
-    const geometry_msgs::msg::TransformStamped & tf_post) override;
+  void change_frames(const Pose & pose_pre, const Pose & pose_post) override;
 
 protected:
   // ========== Internal variables  ==========

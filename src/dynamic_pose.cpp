@@ -69,28 +69,26 @@ DynamicPose::DynamicPose(
 
 // ========== Main methods ==========
 
-void DynamicPose::apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
+void DynamicPose::change_parent_frame(const Pose & pose)
 {
   // Update pose
-  KinematicPose::apply_pre_transform(tf);
+  KinematicPose::change_parent_frame(pose);
 
   // TODO: Update the covariance
 }
 
-void DynamicPose::apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf)
+void DynamicPose::change_child_frame_inverse(const Pose & pose)
 {
   // Update pose
-  KinematicPose::apply_post_inverse_transform(tf);
+  KinematicPose::change_child_frame_inverse(pose);
 
   // TODO: Update the covariance
 }
 
-void DynamicPose::apply_transform_chain(
-  const geometry_msgs::msg::TransformStamped & tf_pre,
-  const geometry_msgs::msg::TransformStamped & tf_post)
+void DynamicPose::change_frames(const Pose & pose_pre, const Pose & pose_post)
 {
   // Update pose
-  KinematicPose::apply_transform_chain(tf_pre, tf_post);
+  KinematicPose::change_frames(pose_pre, pose_post);
 
   // TODO: Update the covariance
 }

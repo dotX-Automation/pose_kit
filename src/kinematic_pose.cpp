@@ -152,13 +152,14 @@ void KinematicPose::to_twist_with_covariance_stamped(
 
 // ---------- Main methods ----------
 
-void KinematicPose::apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
+void KinematicPose::change_parent_frame(const Pose & pose)
 {
   // Update pose
-  Pose::apply_pre_transform(tf);
+  Pose::change_parent_frame(pose);
 
   // Get the transform isometry
-  const Eigen::Isometry3d T_target_source = tf2::transformToEigen(tf.transform);
+  Eigen::Isometry3d T_target_source;
+  pose.get_isometry(T_target_source);
 
   // Transform the twist
   Eigen::Matrix<double, 6, 1> twist;
@@ -169,41 +170,36 @@ void KinematicPose::apply_pre_transform(const geometry_msgs::msg::TransformStamp
   set_linear_velocity(tf2::Vector3(twist(0), twist(1), twist(2)));
   set_angular_velocity(tf2::Vector3(twist(3), twist(4), twist(5)));
 
-  // Update the covariance
-  Eigen::Map<Matrix6d> twist_cov(twist_cov_.data());
-  twist_cov = adj * twist_cov * adj.transpose();
+  // TODO: Update the covariance
 }
 
-void KinematicPose::apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf)
+void KinematicPose::change_child_frame_inverse(const Pose & pose)
 {
   // Update pose
-  Pose::apply_post_inverse_transform(tf);
+  Pose::change_child_frame_inverse(pose);
 
   // The twist and its covariance remain unchanged when changing the child frame
 }
 
-void KinematicPose::apply_transform_chain(
-  const geometry_msgs::msg::TransformStamped & tf_pre,
-  const geometry_msgs::msg::TransformStamped & tf_post)
+void KinematicPose::change_frames(const Pose & pose_pre, const Pose & pose_post)
 {
   // Update pose
-  Pose::apply_transform_chain(tf_pre, tf_post);
+  Pose::change_frames(pose_pre, pose_post);
 
   // Get the pre-transform isometry
-  const Eigen::Isometry3d Tpre_target_source = tf2::transformToEigen(tf_pre.transform);
+  Eigen::Isometry3d T_pre_target_source;
+  pose_pre.get_isometry(T_pre_target_source);
 
   // Transform the twist (same as pre-transform only)
   Eigen::Matrix<double, 6, 1> twist;
   twist << lin_vel_.x(), lin_vel_.y(), lin_vel_.z(),
     ang_vel_.x(), ang_vel_.y(), ang_vel_.z();
-  const Matrix6d adj_pre = dua_math::adjoint(Tpre_target_source);
+  const Matrix6d adj_pre = dua_math::adjoint(T_pre_target_source);
   twist = adj_pre * twist;
   set_linear_velocity(tf2::Vector3(twist(0), twist(1), twist(2)));
   set_angular_velocity(tf2::Vector3(twist(3), twist(4), twist(5)));
 
-  // Update the covariance
-  Eigen::Map<Matrix6d> twist_cov(twist_cov_.data());
-  twist_cov = adj_pre * twist_cov * adj_pre.transpose();
+  // TODO: Update the covariance
 }
 
 } // namespace pose_kit

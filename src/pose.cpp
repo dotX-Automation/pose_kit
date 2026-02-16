@@ -171,27 +171,36 @@ Pose::Pose(
 
 // ========== ROS message converters ==========
 
+void Pose::to_point(geometry_msgs::msg::Point & msg) const
+{
+  msg.set__x(position().x());
+  msg.set__y(position().y());
+  msg.set__z(position().z());
+}
+
+void Pose::to_quaternion(geometry_msgs::msg::Quaternion & msg) const
+{
+  msg.set__x(attitude().x());
+  msg.set__y(attitude().y());
+  msg.set__z(attitude().z());
+  msg.set__w(attitude().w());
+}
+
+void Pose::to_pose(geometry_msgs::msg::Pose & msg) const
+{
+  to_point(msg.position);
+  to_quaternion(msg.orientation);
+}
+
 void Pose::to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const
 {
   msg.set__header(header());
-  msg.pose.position.set__x(position().x());
-  msg.pose.position.set__y(position().y());
-  msg.pose.position.set__z(position().z());
-  msg.pose.orientation.set__x(attitude().x());
-  msg.pose.orientation.set__y(attitude().y());
-  msg.pose.orientation.set__z(attitude().z());
-  msg.pose.orientation.set__w(attitude().w());
+  to_pose(msg.pose);
 }
 
 void Pose::to_pose_with_covariance(geometry_msgs::msg::PoseWithCovariance & msg) const
 {
-  msg.pose.position.set__x(position().x());
-  msg.pose.position.set__y(position().y());
-  msg.pose.position.set__z(position().z());
-  msg.pose.orientation.set__x(attitude().x());
-  msg.pose.orientation.set__y(attitude().y());
-  msg.pose.orientation.set__z(attitude().z());
-  msg.pose.orientation.set__w(attitude().w());
+  to_pose(msg.pose);
   msg.set__covariance(pose_covariance());
 }
 
@@ -199,14 +208,7 @@ void Pose::to_pose_with_covariance_stamped(
   geometry_msgs::msg::PoseWithCovarianceStamped & msg) const
 {
   msg.set__header(header());
-  msg.pose.pose.position.set__x(position().x());
-  msg.pose.pose.position.set__y(position().y());
-  msg.pose.pose.position.set__z(position().z());
-  msg.pose.pose.orientation.set__x(attitude().x());
-  msg.pose.pose.orientation.set__y(attitude().y());
-  msg.pose.pose.orientation.set__z(attitude().z());
-  msg.pose.pose.orientation.set__w(attitude().w());
-  msg.pose.set__covariance(pose_covariance());
+  to_pose_with_covariance(msg.pose);
 }
 
 void Pose::to_transform_stamped(geometry_msgs::msg::TransformStamped & msg) const
@@ -229,15 +231,15 @@ Pose Pose::inverse() const
   // Get the current isometry
   Eigen::Isometry3d T_parent_child;
   get_isometry(T_parent_child);
-  // Compute inverse isometry
+  // Invert the isometry
   Eigen::Isometry3d T_child_parent = T_parent_child.inverse();
 
-  // Update the header and child frame id
+  // Invert the header and child frame id
   std_msgs::msg::Header inv_header = header_;
   inv_header.set__frame_id(child_frame_id_);
   const std::string & inv_child_frame_id = header_.frame_id;
 
-  // Update the covariance using adjoint
+  // Invert the covariance
   const Matrix6d adj_inv = dua_math::adjoint(T_child_parent);
   PoseCovariance inv_pose_cov;
   Eigen::Map<Matrix6d> inv_cov(inv_pose_cov.data());
@@ -251,11 +253,11 @@ Pose Pose::inverse() const
     inv_pose_cov);
 }
 
-void Pose::apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
+void Pose::change_parent_frame(const Pose & pose)
 {
   // Check frame consistency
   const std::string parent = parent_frame_id();
-  const std::string & source = tf.child_frame_id;
+  const std::string & source = pose.child_frame_id();
   if (parent != source) {
     throw std::runtime_error("pose_kit: frame mismatch: got '" + source +
       "' expected '" + parent + "'");
@@ -264,25 +266,25 @@ void Pose::apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
   // Get the current isometry
   Eigen::Isometry3d T_parent_child;
   get_isometry(T_parent_child);
+
   // Get the transform isometry
-  const Eigen::Isometry3d T_target_source = tf2::transformToEigen(tf.transform);
+  Eigen::Isometry3d T_target_source;
+  pose.get_isometry(T_target_source);
+
   // Update the pose: T_target_child = T_target_source * T_parent_child
   set_isometry(T_target_source * T_parent_child);
 
-  // Update the covariance
-  const Matrix6d adj = dua_math::adjoint(T_target_source);
-  Eigen::Map<Matrix6d> pose_cov(pose_cov_.data());
-  pose_cov = adj * pose_cov * adj.transpose();
+  // TODO: Update the covariance
 
   // Update the parent frame id
-  set_parent_frame_id(tf.header.frame_id);
+  set_parent_frame_id(pose.parent_frame_id());
 }
 
-void Pose::apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf)
+void Pose::change_child_frame_inverse(const Pose & pose)
 {
   // Check frame consistency
   const std::string child = child_frame_id();
-  const std::string & source = tf.child_frame_id;
+  const std::string & source = pose.child_frame_id();
   if (child != source) {
     throw std::runtime_error("pose_kit: frame mismatch: got '" + source +
       "' expected '" + child + "'");
@@ -291,35 +293,33 @@ void Pose::apply_post_inverse_transform(const geometry_msgs::msg::TransformStamp
   // Get the current isometry
   Eigen::Isometry3d T_parent_child;
   get_isometry(T_parent_child);
+
   // Get the transform isometry
-  const Eigen::Isometry3d T_target_source = tf2::transformToEigen(tf.transform);
+  Eigen::Isometry3d T_target_source;
+  pose.get_isometry(T_target_source);
   const Eigen::Isometry3d T_source_target = T_target_source.inverse();
+
   // Update the pose: T_parent_target = T_parent_child * T_source_target
   set_isometry(T_parent_child * T_source_target);
 
-  // Update the covariance
-  const Matrix6d adj = dua_math::adjoint(T_source_target);
-  Eigen::Map<Matrix6d> pose_cov(pose_cov_.data());
-  pose_cov = adj * pose_cov * adj.transpose();
+  // TODO: Update the covariance
 
   // Update the child frame id
-  set_child_frame_id(tf.header.frame_id);
+  set_child_frame_id(pose.parent_frame_id());
 }
 
-void Pose::apply_transform_chain(
-  const geometry_msgs::msg::TransformStamped & tf_pre,
-  const geometry_msgs::msg::TransformStamped & tf_post)
+void Pose::change_frames(const Pose & pose_pre, const Pose & pose_post)
 {
   // Check frame consistency
   const std::string parent = parent_frame_id();
-  const std::string & source_pre = tf_pre.child_frame_id;
+  const std::string & source_pre = pose_pre.child_frame_id();
   if (parent != source_pre) {
     throw std::runtime_error("pose_kit: pre frame mismatch: got '" + source_pre +
       "' expected '" + parent + "'");
   }
 
   const std::string child = child_frame_id();
-  const std::string & source_post = tf_post.child_frame_id;
+  const std::string & source_post = pose_post.child_frame_id();
   if (child != source_post) {
     throw std::runtime_error("pose_kit: post frame mismatch: got '" + source_post +
       "' expected '" + child + "'");
@@ -328,22 +328,22 @@ void Pose::apply_transform_chain(
   // Get the current isometry
   Eigen::Isometry3d T_parent_child;
   get_isometry(T_parent_child);
-  // Get the transform isometries
-  const Eigen::Isometry3d Tpre_target_source = tf2::transformToEigen(tf_pre.transform);
-  const Eigen::Isometry3d Tpost_target_source = tf2::transformToEigen(tf_post.transform);
-  const Eigen::Isometry3d Tpost_source_target = Tpost_target_source.inverse();
-  // Update the pose: T_target_child = Tpre_target_source * T_parent_child * Tpost_source_target
-  set_isometry(Tpre_target_source * T_parent_child * Tpost_source_target);
 
-  // Update the covariance
-  const Matrix6d adj_pre = dua_math::adjoint(Tpre_target_source);
-  const Matrix6d adj_post_inv = dua_math::adjoint(Tpost_source_target);
-  Eigen::Map<Matrix6d> pose_cov(pose_cov_.data());
-  pose_cov = adj_pre * (adj_post_inv * pose_cov * adj_post_inv.transpose()) * adj_pre.transpose();
+  // Get the transform isometries
+  Eigen::Isometry3d T_pre_target_source;
+  pose_pre.get_isometry(T_pre_target_source);
+  Eigen::Isometry3d T_post_target_source;
+  pose_post.get_isometry(T_post_target_source);
+  const Eigen::Isometry3d T_post_source_target = T_post_target_source.inverse();
+
+  // Update the pose: T_target_child = T_pre_target_source * T_parent_child * T_post_source_target
+  set_isometry(T_pre_target_source * T_parent_child * T_post_source_target);
+
+  // TODO: Update the covariance
 
   // Update the frame ids
-  set_parent_frame_id(tf_pre.header.frame_id);
-  set_child_frame_id(tf_post.header.frame_id);
+  set_parent_frame_id(pose_pre.parent_frame_id());
+  set_child_frame_id(pose_post.parent_frame_id());
 }
 
 } // namespace pose_kit

@@ -200,6 +200,12 @@ public:
 
   // ========== ROS message converters ==========
 
+  void to_point(geometry_msgs::msg::Point & msg) const;
+
+  void to_quaternion(geometry_msgs::msg::Quaternion & msg) const;
+
+  void to_pose(geometry_msgs::msg::Pose & msg) const;
+
   void to_pose_stamped(geometry_msgs::msg::PoseStamped & msg) const;
 
   void to_pose_with_covariance(geometry_msgs::msg::PoseWithCovariance & msg) const;
@@ -470,7 +476,12 @@ public:
    *   - source == current parent frame
    *   - target == new parent frame
    */
-  virtual void apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf);
+  virtual void change_parent_frame(const Pose & pose);
+
+  void apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
+  {
+    change_parent_frame(Pose(tf));
+  }
 
   /**
    * @brief Change the child frame of the pose (right-multiply by the inverse of a transform).
@@ -487,7 +498,12 @@ public:
    * Pose update:
    *   T_parent_target = T_parent_child · (T_target_source)^{-1}
    */
-  virtual void apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf);
+  virtual void change_child_frame_inverse(const Pose & pose);
+
+  void apply_post_inverse_transform(const geometry_msgs::msg::TransformStamped & tf)
+  {
+    change_child_frame_inverse(Pose(tf));
+  }
 
   /**
    * @brief Simultaneously change parent frame and child frame.
@@ -502,9 +518,14 @@ public:
    * Pose update:
    *   T_target_pre_target_post = Tpre_target_source · T_parent_child · (Tpost_target_source)^{-1}
    */
-  virtual void apply_transform_chain(
+  virtual void change_frames(const Pose & pose_pre, const Pose & pose_post);
+
+  void apply_transform_chain(
     const geometry_msgs::msg::TransformStamped & tf_pre,
-    const geometry_msgs::msg::TransformStamped & tf_post);
+    const geometry_msgs::msg::TransformStamped & tf_post)
+  {
+    change_frames(Pose(tf_pre), Pose(tf_post));
+  }
 
 protected:
   // ========== Internal variables  ==========
