@@ -224,6 +224,33 @@ void Pose::to_transform_stamped(geometry_msgs::msg::TransformStamped & msg) cons
 
 // ========== Main methods ==========
 
+Pose Pose::inverse() const
+{
+  // Get the current isometry
+  Eigen::Isometry3d T_parent_child;
+  get_isometry(T_parent_child);
+  // Compute inverse isometry
+  Eigen::Isometry3d T_child_parent = T_parent_child.inverse();
+
+  // Update the header and child frame id
+  std_msgs::msg::Header inv_header = header_;
+  inv_header.set__frame_id(child_frame_id_);
+  const std::string & inv_child_frame_id = header_.frame_id;
+
+  // Update the covariance using adjoint
+  const Matrix6d adj_inv = dua_math::adjoint(T_child_parent);
+  PoseCovariance inv_pose_cov;
+  Eigen::Map<Matrix6d> inv_cov(inv_pose_cov.data());
+  Eigen::Map<const Matrix6d> curr_cov(pose_cov_.data());
+  inv_cov = adj_inv * curr_cov * adj_inv.transpose();
+
+  return Pose::from_isometry(
+    T_child_parent,
+    inv_header,
+    inv_child_frame_id,
+    inv_pose_cov);
+}
+
 void Pose::apply_pre_transform(const geometry_msgs::msg::TransformStamped & tf)
 {
   // Check frame consistency

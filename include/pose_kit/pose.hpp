@@ -262,66 +262,16 @@ public:
 
   // ---------- RPY ----------
 
-  inline void set_roll(double roll)
-  {
-    Eigen::Vector3d rpy = Eigen::Vector3d::Zero();
-    get_rpy(rpy);
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
-    att.setRPY(roll, rpy.y(), rpy.z());
-    set_attitude(att);
-  }
-
-  inline void set_pitch(double pitch)
-  {
-    Eigen::Vector3d rpy = Eigen::Vector3d::Zero();
-    get_rpy(rpy);
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
-    att.setRPY(rpy.x(), pitch, rpy.z());
-    set_attitude(att);
-  }
-
-  inline void set_yaw(double yaw)
-  {
-    Eigen::Vector3d rpy = Eigen::Vector3d::Zero();
-    get_rpy(rpy);
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
-    att.setRPY(rpy.x(), rpy.y(), yaw);
-    set_attitude(att);
-  }
-
-  [[nodiscard]] inline double get_roll() const
-  {
-    double roll, pitch, yaw;
-    tf2::getEulerYPR(att_, yaw, pitch, roll);
-    return roll;
-  }
-
-  [[nodiscard]] inline double get_pitch() const
-  {
-    double roll, pitch, yaw;
-    tf2::getEulerYPR(att_, yaw, pitch, roll);
-    return pitch;
-  }
-
-  [[nodiscard]] inline double get_yaw() const
-  {
-    double roll, pitch, yaw;
-    tf2::getEulerYPR(att_, yaw, pitch, roll);
-    return yaw;
-  }
-
   inline void set_rpy(const tf2::Vector3 & rpy)
   {
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
+    tf2::Quaternion att;
     att.setRPY(rpy.x(), rpy.y(), rpy.z());
     set_attitude(att);
   }
 
   inline void set_rpy(const Eigen::Vector3d & rpy)
   {
-    tf2::Quaternion att = tf2::Quaternion::getIdentity();
-    att.setRPY(rpy.x(), rpy.y(), rpy.z());
-    set_attitude(att);
+    set_rpy(tf2::Vector3(rpy.x(), rpy.y(), rpy.z()));
   }
 
   inline void get_rpy(tf2::Vector3 & rpy) const
@@ -335,11 +285,74 @@ public:
 
   inline void get_rpy(Eigen::Vector3d & rpy) const
   {
-    double roll, pitch, yaw;
-    tf2::getEulerYPR(att_, yaw, pitch, roll);
-    rpy.x() = roll;
-    rpy.y() = pitch;
-    rpy.z() = yaw;
+    tf2::Vector3 rpy_vec;
+    get_rpy(rpy_vec);
+    rpy.x() = rpy_vec.x();
+    rpy.y() = rpy_vec.y();
+    rpy.z() = rpy_vec.z();
+  }
+
+  inline void set_roll(double roll)
+  {
+    Eigen::Vector3d rpy;
+    get_rpy(rpy);
+    set_rpy(tf2::Vector3(roll, rpy.y(), rpy.z()));
+  }
+
+  inline void set_pitch(double pitch)
+  {
+    Eigen::Vector3d rpy;
+    get_rpy(rpy);
+    set_rpy(tf2::Vector3(rpy.x(), pitch, rpy.z()));
+  }
+
+  inline void set_yaw(double yaw)
+  {
+    Eigen::Vector3d rpy;
+    get_rpy(rpy);
+    set_rpy(tf2::Vector3(rpy.x(), rpy.y(), yaw));
+  }
+
+  [[nodiscard]] inline double get_roll() const
+  {
+    tf2::Vector3 rpy;
+    get_rpy(rpy);
+    return rpy.x();
+  }
+
+  [[nodiscard]] inline double get_pitch() const
+  {
+    tf2::Vector3 rpy;
+    get_rpy(rpy);
+    return rpy.y();
+  }
+
+  [[nodiscard]] inline double get_yaw() const
+  {
+    tf2::Vector3 rpy;
+    get_rpy(rpy);
+    return rpy.z();
+  }
+
+  [[nodiscard]] inline double get_heading() const
+  {
+    tf2::Matrix3x3 m(att_);
+    const tf2::Vector3 x_axis = m.getColumn(0);
+    return std::atan2(x_axis.y(), x_axis.x());
+  }
+
+  [[nodiscard]] inline double get_forward_tilt() const
+  {
+    tf2::Matrix3x3 m(att_);
+    const tf2::Vector3 x_axis = m.getColumn(0);
+    return std::atan2(-x_axis.z(), std::hypot(x_axis.x(), x_axis.y()));
+  }
+
+  [[nodiscard]] inline double get_lateral_elevation() const
+  {
+    tf2::Matrix3x3 m(att_);
+    const tf2::Vector3 y_axis = m.getColumn(1);
+    return std::atan2(-y_axis.z(), std::hypot(y_axis.x(), y_axis.y()));
   }
 
   // ---------- Isometry ----------
@@ -437,6 +450,13 @@ public:
   }
 
   // ========== Main methods ==========
+
+  /**
+   * @brief Compute the inverse pose transformation.
+   *
+   * If this pose represents T_parent_child, the inverse represents T_child_parent.
+   */
+  [[nodiscard]] Pose inverse() const;
 
   /**
    * @brief Change the parent frame of the pose (left-multiply by a transform).
